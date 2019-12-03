@@ -1,0 +1,7 @@
+<Commands>
+	<Command Id=1>scan</Command>
+	<Command Id=2>run</Command>
+	<Command Id=3>urun</Command>
+	<Command Id=4>openvs</Command>
+	<Command Id=5>openr</Command>
+</Commands>
