@@ -52,11 +52,8 @@ class Main
 
         switch($command.Id)
         {
-            ([CommandsEnum]::UnmanagedRun)  { 
-
-               Write-Host ([ComHandlers]::URunHandle('', $commandParams))
-            }
-            default{ Write-Host "There is no handler for command: $($command.Id)" }
+            ([CommandsEnum]::UnmanagedRun) { Write-Host ([ComHandlers]::URunHandle("$([Main]::RootPath)\$([Main]::UnManagedScriptsPath)", $commandParams)) }
+            default { Write-Host "There is no handler for command: $($command.Id)" }
         }
 
         return ""

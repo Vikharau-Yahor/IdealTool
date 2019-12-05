@@ -12,7 +12,13 @@ class ComHandlers
         
         if(-not [StringHelper]::StringIsMatchedToRegExp($scriptName, '^([a-zA-Z0-9\-_]+)$'))
         { return "Script name allowed characters: english alphabet, '-' and '_'" }
+        $scriptFullPath = "$scriptsFolder\$scriptName.ps1"
         
+        if(-not (Test-Path -Path $scriptFullPath))
+        { return "Unmanaged Script '$scriptName' doesn't exists in folder: $scriptsFolder" }
+
+        start powershell.exe -File $scriptFullPath
+
         return "Script: $scriptName has successfully started"
     }
 }
