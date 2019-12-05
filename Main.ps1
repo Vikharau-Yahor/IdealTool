@@ -52,8 +52,11 @@ class Main
 
         switch($command.Id)
         {
-            ([CommandsEnum]::Run)  { Write-Host "Run Command"}
-            default{Write-Host "Unknown command: $($command.Id)"}
+            ([CommandsEnum]::UnmanagedRun)  { 
+
+               Write-Host ([ComHandlers]::URunHandle('', $commandParams))
+            }
+            default{ Write-Host "There is no handler for command: $($command.Id)" }
         }
 
         return ""
