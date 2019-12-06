@@ -1,1 +1,1 @@
-c:\work\io\externalapps\RunTransformEngine.ps1
+c:\work\io\externalapps\RunTransformEngine.bat

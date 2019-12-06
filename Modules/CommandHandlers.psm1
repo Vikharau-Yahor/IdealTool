@@ -1,4 +1,3 @@
-#using module E:\GitProjects\IdealTool\Modules\Utils\StringHelper.psm1
 using module .\Utils\StringHelper.psm1
 
 class ComHandlers
@@ -12,13 +11,14 @@ class ComHandlers
         
         if(-not [StringHelper]::StringIsMatchedToRegExp($scriptName, '^([a-zA-Z0-9\-_]+)$'))
         { return "Script name allowed characters: english alphabet, '-' and '_'" }
+        
         $scriptFullPath = "$scriptsFolder\$scriptName.ps1"
         
         if(-not (Test-Path -Path $scriptFullPath))
         { return "Unmanaged Script '$scriptName' doesn't exists in folder: $scriptsFolder" }
 
-        start powershell.exe -File $scriptFullPath
+        start powershell.exe -ArgumentList "-File $scriptFullPath" -Verb runAs
 
-        return "Script: $scriptName has successfully started"
+        return "Script: '$scriptName.ps1' has successfully started"
     }
 }
