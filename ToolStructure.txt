@@ -1,0 +1,27 @@
+_Scripts
+	Managed	
+	UnManaged
+_StorageFiles
+	nProjects.Xml
+	Commands.Xml
+CommandHandlers
+	Urun
+	Base
+Models
+	CommandsEnum
+	Command
+	GitRepo
+	NProject
+Storages
+	CommandsStorage
+	NProjectsStorage
+	GitStorage
+	_StorageProvider
+Utils
+	StringHelper
+	XmlHelper
+
+CommandHandlersFactory
+Global
+Logger
+Main

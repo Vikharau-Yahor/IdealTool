@@ -1,65 +1,70 @@
-using module .\Modules\CommandHandlers.psm1
-using module .\Configs\CommandsStorage.psm1
+using module .\Storages\_StorageProvider.psm1
+using module .\Models\CommandsEnum.psm1
+using module .\Models\Command.psm1
+using module .\CommandHandlersFactory.psm1
+using module .\CommandHandlers\_CommandHandlerBase.psm1
+using module .\Global.psm1
+using module .\Logger.psm1
+
 using namespace System.Collections.Generic
 
 class Main
 {
-    static [string] $RootPath
-    # configs
-    static [string] $MainCfgPath = "\Main.cfg"
-    static [string] $CommandsCfgPath = "\Configs\Commands.cfg"
-    static [string] $ManagedScriptsPath = "\Scripts\Managed"
-    static [string] $UnManagedScriptsPath = "\Scripts\UnManaged"
-
-    [CommandsStorage] $CommandsStorage
+    [StorageProvider] $StorageProvider
+    [CommandHanldersFactory] $ComHandlersFactory
+    [Logger] $Logger
 
     Init($scriptRootPath)
     {
-        [Main]::RootPath = $scriptRootPath
-        $this.CommandsStorage = [CommandsStorage]::new("$([Main]::RootPath)$([Main]::CommandsCfgPath)")      
+        [Global]::RootPath = $scriptRootPath
+        $this.StorageProvider = [StorageProvider]::new()   
+        $this.Logger = [Logger]::new()   
+        $this.ComHandlersFactory = [CommandHanldersFactory]::new($this.StorageProvider, $this.Logger)   
     }
 
 
     Start()
     {
         $userInput = ""
-        $quitComAlias = $this.CommandsStorage.GetAlias([CommandsEnum]::Quit)
+        $quitComAlias = $this.StorageProvider.GetCommandsStorage().GetAlias([CommandsEnum]::Quit)
+       
         while($userInput -ne $quitComAlias)
         {
-            $userInput = Read-Host "($quitComAlias to exit) command"
-            Write-Host ($this.ProcessCommand($userInput) + "`n")           
+            $userInput = Read-Host "($quitComAlias to exit) command"     
+            $this.ProcessCommand($userInput)     
         }
     }
 
-
-    [string] ProcessCommand([string] $commandStr)
+    [void] ProcessCommand([string] $commandStr)
     {
-        if($commandStr -eq $this.CommandsStorage.GetAlias([CommandsEnum]::Quit))
-        {  
-            return ""
-        }
+        $commandStorage = $this.StorageProvider.GetCommandsStorage()
+        
+        if($commandStr -eq $commandStorage.GetAlias([CommandsEnum]::Quit))
+        { return }
 
-        $commandParts = $this.SplitOnCommandAndParams($commandStr)
-        $commandAlias = $commandParts.Item1
-        $commandParams = $commandParts.Item2
+        $commandItems = $this.ExtractCommandItems($commandStr)
+        $commandAlias = $commandItems.Item1
+        $commandParams = $commandItems.Item2
 
-        [Command]$command = $this.CommandsStorage.GetByAlias($commandAlias)
+        [Command]$command = $commandStorage.GetByAlias($commandAlias)
         if($command -eq $null)
         {
-            Write-Host "Unknown command: $commandAlias"
-            return ""
+            $this.Logger.LogInfo("Unknown command: $commandAlias")
+            return
         }
 
-        switch($command.Id)
+        [CommandHandlerBase]$handler = $this.ComHandlersFactory.Create($command.Id, $commandParams)
+       
+        if($handler -eq $null)
         {
-            ([CommandsEnum]::UnmanagedRun) { Write-Host ([ComHandlers]::URunHandle("$([Main]::RootPath)\$([Main]::UnManagedScriptsPath)", $commandParams)) }
-            default { Write-Host "There is no handler for command: $($command.Id)" }
+            $this.Logger("There is no handler for command: $($command.Id)")
+            return
         }
 
-        return ""
+        $handler.Handle()
     }
 
-    [System.Tuple[string,string]] SplitOnCommandAndParams($commandString)
+    [System.Tuple[string,string]] ExtractCommandItems($commandString)
     {
         $commandDelimiterIndex = $commandString.IndexOf(' ');
         if($commandDelimiterIndex -eq -1)

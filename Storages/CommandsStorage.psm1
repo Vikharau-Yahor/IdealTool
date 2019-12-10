@@ -1,16 +1,8 @@
 using namespace System.Collections.Generic
 using namespace System.Xml
 
-enum CommandsEnum
-{
-    Quit = 0
-    Scan = 1
-    Run = 2
-    UnmanagedRun = 3
-    OpenVisualStudio = 4
-    OpenRider = 5
-}
-
+using module ..\Models\CommandsEnum.psm1
+using module ..\Models\Command.psm1
 
 class CommandsStorage
 { 
@@ -77,11 +69,4 @@ class CommandsStorage
             return $null
         }
     }
-}
-
-
-class Command
-{
-    [CommandsEnum] $Id 
-    [string] $Alias
 }
