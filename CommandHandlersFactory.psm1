@@ -4,6 +4,7 @@ using module .\Logger.psm1
 #Command handlers
 using module .\CommandHandlers\_CommandHandlerBase.psm1
 using module .\CommandHandlers\URunHandler.psm1
+using module .\CommandHandlers\ScanHandler.psm1
 
 class CommandHanldersFactory
 {
@@ -23,6 +24,7 @@ class CommandHanldersFactory
         switch($commandType)
         {
             ([CommandsEnum]::UnmanagedRun) { $handler = [URunHandler]::new($this.StorageProvider, $this.Logger, $commandParams) } 
+            ([CommandsEnum]::Scan) { $handler = [ScanHandler]::new($this.StorageProvider, $this.Logger, $commandParams) } 
             default { return $null }
         }
 
