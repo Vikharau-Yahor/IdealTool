@@ -6,6 +6,7 @@ using namespace System.Xml.Serialization
 
 class Helper
 {
+    static [string] $ContainerNodeNamePart = '-Container'
     static [void] Serialize([Object] $obj, [string] $toXmlPath)
     {
         [XmlDocument] $doc =  [XmlDocument]::new();
@@ -18,50 +19,66 @@ class Helper
         { throw 'XmlRoot attribute is required for serialization object' }
 
         [string]$rootNodename = if([string]::IsNullOrEmpty($xmlRootAttribute.ElementName)) {$objType.Name} Else {$xmlRootAttribute.ElementName} 
-        $rootElemet = [Helper]::CreateNodeFromObject($obj, $null, $doc)               
+        $rootElemet = [Helper]::CreateNodeFromObject($obj, $doc, $rootNodename)
+        $doc.AppendChild($rootElemet)
+
+        $doc.Save($toXmlPath)               
     }
 
-    static [XmlElement] CreateNodeFromObject([Object] $obj, [XmlElement] $parentNode, [XmlDocument] $doc)
+    static [XmlElement] CreateNodeFromObject([Object] $obj, [XmlDocument] $doc, [string]$nodeName)
     {
-        [XmlElement] $newNode = $null
+        [XmlElement] $currentNode = $null
         [Type] $objType = $obj.GetType()
-       
-        $objProps = $obj.GetType().GetProperties()
-        $objProps | ForEach-Object{
-            [PropertyInfo]$prop = $_
-            $isArray = $prop.ReflectedType -eq [Array]
-            $isCommonType = $prop.ReflectedType.FullName.StartsWith('System')
-            if($isArray)
-            { 
-                [XmlRootAttribute]$xmlElementAttr = [Attribute]::GetCustomAttribute($objType, [XmlRootAttribute])
-                if($xmlElementAttr -eq $null)
-                { throw "XmlRootAttribute must be specified for property $($prop.Name) of type $($objType.Name)" }
+        $isObjArray = $objType.BaseType -eq [Array]
+        $isObjCommonType = $objType.FullName.StartsWith('System')
 
-                [string] $containerNodeName = if([string]::IsNullOrEmpty($xmlElementAttr.ElementName)) {$prop.Name} Else {$xmlRootAttribute.ElementName} 
-                $containerNodeName+="Container"
-                $containerNode = $doc.CreateElement($containerNodeName)
-                $propValueCollection = $prop.GetValue()
-
-                [Helper]::CreateNodeFromObject($prop.GetValue(), $containerNode, $doc)
-            }
-            else
-            if($isCommonType)
-            {
+        if($isObjCommonType -and -not $isObjArray)
+        { 
+            $currentNode = $doc.CreateElement($nodeName)
+            $currentNode.InnerText = $obj.ToString() 
+        }
+        elseif ($isObjArray)
+        {        
+            $childNodeName = $nodeName
+            $containerName = $nodeName + [Helper]::ContainerNodeNamePart
+            $currentNode = $doc.CreateElement($containerName)
+            $obj | ForEach-Object { 
+                if($_ -ne $null) { 
+                    $childNode = [Helper]::CreateNodeFromObject($_, $doc, $childNodeName)
+                    $currentNode.AppendChild($childNode) 
+                }
             }
         }
-        return $newNode
+        else
+        {
+            $currentNode = $doc.CreateElement($nodeName)
+            $objProps = $objType.GetProperties()
+            $objProps | ForEach-Object {
+                [PropertyInfo]$prop = $_
+                $propValue = $prop.GetValue($obj)
+                
+                if($propValue -eq $null)
+                { return }
+                $isPropString = $prop.PropertyType -eq [String]
+                $isPropArray = $prop.PropertyType.BaseType -eq [Array]
+                $isPropCommonType = ($prop.PropertyType.FullName.StartsWith('System')) -and (-not $isPropArray -or $isPropString)
+
+                if($isPropCommonType)
+                {
+                  $currentNode.SetAttribute($prop.Name, $propValue)
+                }
+                else{
+                     [XmlElementAttribute]$xmlElementAttr = [Attribute]::GetCustomAttribute($prop, [XmlElementAttribute])
+                     [string] $nextNodeName = if([string]::IsNullOrEmpty($xmlElementAttr.ElementName)) {$prop.Name} Else {$xmlElementAttr.ElementName} 
+                     #$nextNodeName += if($isPropArray) {[Helper]::ContainerNodeNamePart} Else {[string]::Empty} 
+                     $childNode = [Helper]::CreateNodeFromObject($propValue, $doc, $nextNodeName)
+                     $currentNode.AppendChild($childNode)
+                }
+            }
+        }
+        return $currentNode
     }
-
-    static [XmlElement] ProcessArrayNode()
-    {
-        [XmlElement] $arrayElement = [XmlElement]::new()
-
-        return $arrayElement
-    }
-
-
 }
-
 
 class Child
 {
@@ -95,6 +112,7 @@ $parent = [Person]::new()
 $parent._Child = $child
 $parent.Name = 'Ivan'
 $parent.LastName = 'Ivanov'
-[Helper]::Serialize($parent, 'C:\work\Tools\test.xml')
+$parent.Proffs = @('prof1','prof2')
+[Helper]::Serialize($parent, 'E:\test.xml')
 
 #Get-Member -InputObject $parent -MemberType Properties
