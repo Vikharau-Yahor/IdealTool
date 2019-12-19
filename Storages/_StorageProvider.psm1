@@ -7,7 +7,7 @@ class StorageProvider
 
     StorageProvider()
     {
-        $this.CommandsStorage = [CommandsStorage]::new("$([Global]::RootPath)$([Global]::CommandsCfgPath)")  
+        $this.CommandsStorage = [CommandsStorage]::new("$([Global]::RootPath)$([Global]::CommandsPath)")  
     }
 
     Reload()

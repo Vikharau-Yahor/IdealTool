@@ -3,13 +3,10 @@ using namespace System.Xml
 
 using module ..\Models\CommandsEnum.psm1
 using module ..\Models\Command.psm1
+using module ..\Utils\XmlHelper.psm1
 
 class CommandsStorage
 { 
-    #config xPathes
-    [string] $xRoot = "/Commands"
-    [string] $xCommandIdAttr = "Id"
-
     #object props
     [Dictionary[string, Command]] $CommandsByAlias
     [Dictionary[CommandsEnum, Command]] $CommandsById
@@ -25,25 +22,14 @@ class CommandsStorage
     {
         $this.CommandsByAlias = [Dictionary[string, Command]]::new()
         $this.CommandsById = [Dictionary[CommandsEnum, Command]]::new()
-        $configXml = [XmlDocument]::new()
-        $configXml.Load($this.ConfigFullPath)
-        
-        if($configXml -eq $null)
-        {
-            throw [System.IO.FileNotFoundException] "Config file is null"
-        }
-
-        [XmlNode]$rootNode = $configXml.SelectSingleNode($this.xRoot)
-
-        $rootNode.ChildNodes | ForEach-Object {
-            [XmlNode]$node = $_ 
-            $command = [Command]::new()
-            $idValue = $node.Attributes.GetNamedItem($this.xCommandIdAttr).Value
-            $command.Id = [int]::Parse($idValue)
-            $command.Alias = $node.InnerText      
+               
+        [CommandsContainer]$commandsContainer = [XmlHelper]::Deserialize([CommandsContainer], $this.ConfigFullPath)
+        $commandsContainer.Commands | ForEach-Object {
+            $command = $_
             $this.CommandsByAlias.Add($command.Alias,$command)  
-            $this.CommandsById.Add($command.Id,$command)    
+            $this.CommandsById.Add($command.Id,$command)   
         }
+        return     
     }
 
     [Command] GetByAlias([string] $commAlias)

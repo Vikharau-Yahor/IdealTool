@@ -2,7 +2,8 @@ class Global
 {
 	static [string] $RootPath
     
-    static [string] $CommandsCfgPath = "\_StorageFiles\Commands.xml"
+    static [string] $CommandsPath = "\_StorageFiles\Commands.xml"
+    static [string] $GitReposPath = "\_StorageFiles\GitRepos.xml"
     static [string] $ManagedScriptsPath = "\_Scripts\Managed"
     static [string] $UnManagedScriptsPath = "\_Scripts\UnManaged"
 }

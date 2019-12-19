@@ -1,9 +1,10 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Commands>
-	<Command Id="0">q</Command>
-	<Command Id="1">scan</Command>
-	<Command Id="2">run</Command>
-	<Command Id="3">urun</Command>
-	<Command Id="4">openvs</Command>
-	<Command Id="5">openr</Command>
-</Commands>
+<CommandsRoot>
+  <Commands>
+    <Command Id="0" Alias="q" />
+    <Command Id="1" Alias="scan" />
+    <Command Id="2" Alias="run" />
+    <Command Id="3" Alias="urun" />
+    <Command Id="4" Alias="openvs" />
+    <Command Id="5" Alias="openr" />
+  </Commands>
+</CommandsRoot>

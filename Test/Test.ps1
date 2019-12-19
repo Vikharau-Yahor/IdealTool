@@ -4,9 +4,11 @@ using namespace System.Reflection
 using namespace System.Xml
 using namespace System.Xml.Serialization
 using module ..\Utils\CommonHelper.psm1
+using module ..\Models\CommandsEnum.psm1
 
-class Helper
+class XmlHelper
 {
+    #public
     static [void] Serialize([Object] $obj, [string] $toXmlPath)
     {
         [XmlDocument] $doc =  [XmlDocument]::new();
@@ -14,62 +16,9 @@ class Helper
         [XmlRootAttribute]$xmlRootAttribute = [Attribute]::GetCustomAttribute($objType, [XmlRootAttribute])
 
         [string]$rootNodename = [CH]::Ternary([string]::IsNullOrEmpty($xmlRootAttribute.ElementName), $objType.Name, $xmlRootAttribute.ElementName)
-        $rootElemet = [Helper]::CreateNodeFromObject($obj, $doc, $rootNodename)
+        $rootElemet = [XmlHelper]::SerializeObjToXmlNode($obj, $doc, $rootNodename)
         $doc.AppendChild($rootElemet)
         $doc.Save($toXmlPath)               
-    }
-
-    static [XmlElement] CreateNodeFromObject([Object] $obj, [XmlDocument] $doc, [string]$nodeName)
-    {
-        [XmlElement] $currentNode = $doc.CreateElement($nodeName)
-        [Type] $objType = $obj.GetType()
-        $isObjArray = $objType.BaseType -eq [Array]
-        $isObjCommonType = $objType.FullName.StartsWith('System')
-
-        if($isObjCommonType -and -not $isObjArray)
-        { 
-            $currentNode.InnerText = $obj.ToString() 
-        }
-        elseif ($isObjArray)
-        {        
-            $anyChild = ($obj | Where-Object { $_ -ne $null } | select -First 1)
-            
-            if ($anyChild -eq $null) { return $currentNode }
-            $childNodeName = $anyChild.GetType().Name
-
-            $obj | ForEach-Object { 
-                if($_ -ne $null) { 
-                    $childNode = [Helper]::CreateNodeFromObject($_, $doc, $childNodeName)
-                    $currentNode.AppendChild($childNode) 
-                }
-            }
-        }
-        else
-        {
-            $objProps = $objType.GetProperties()
-            $objProps | ForEach-Object {
-                [PropertyInfo]$prop = $_
-                $propValue = $prop.GetValue($obj)
-                
-                if($propValue -eq $null)
-                { return }
-                $isPropString = $prop.PropertyType -eq [String]
-                $isPropArray = $prop.PropertyType.BaseType -eq [Array]
-                $isPropCommonType = ($prop.PropertyType.FullName.StartsWith('System')) -and (-not $isPropArray -or $isPropString)
-
-                if($isPropCommonType)
-                {
-                    $currentNode.SetAttribute($prop.Name, $propValue)
-                }
-                else{
-                     [XmlElementAttribute]$xmlElementAttr = [Attribute]::GetCustomAttribute($prop, [XmlElementAttribute])
-                     [string] $nextNodeName = if([string]::IsNullOrEmpty($xmlElementAttr.ElementName)) {$prop.Name} Else {$xmlElementAttr.ElementName}  
-                     $childNode = [Helper]::CreateNodeFromObject($propValue, $doc, $nextNodeName)
-                     $currentNode.AppendChild($childNode)
-                }
-            }
-        }
-        return $currentNode
     }
 
     static [Object] Deserialize([Type] $objType, [string] $fromXmlPath)
@@ -83,36 +32,124 @@ class Helper
         [XmlRootAttribute]$xmlRootAttribute = [Attribute]::GetCustomAttribute($objType, [XmlRootAttribute])
         [string]$rootNodename = [CH]::Ternary([string]::IsNullOrEmpty($xmlRootAttribute.ElementName), $objType.Name, $xmlRootAttribute.ElementName)
         [XmlNode]$rootNode = $doc.ChildNodes[0]
+        
         [CH]::ThrowError($rootNode -eq $null, "XML file is empty (or doesn't contain xml nodes)")
-        [CH]::ThrowError($rootNode.Name -ne $rootNodename, "XML contains unexpected root node with name: '$($rootNode.Name)' but expected: '$rootNodename'")
-        $deserializedObject = [Helper]::DeserializeNode($objType, $rootNode)  
+        [CH]::ThrowError($rootNode.LocalName -ne $rootNodename, "XML contains unexpected root node with name: '$($rootNode.LocalName)' but expected: '$rootNodename'")
+        
+        $deserializedObject = [XmlHelper]::DeserializeNode($objType, $rootNode)  
         return $deserializedObject             
     }
-    static [Object] DeserializeNode([Type] $objType, [XmlNode] $node)
+
+    #private
+    hidden static [XmlElement] SerializeObjToXmlNode([Object] $obj, [XmlDocument] $doc, [string]$nodeName)
     {
-        $obj = [Activator]::CreateInstance($objType);
+        [XmlElement] $currentNode = $doc.CreateElement($nodeName)
+        [Type] $objType = $obj.GetType()
         $isObjArray = $objType.BaseType -eq [Array]
         $isObjCommonType = $objType.FullName.StartsWith('System')
+        $isObjEnum = $objType.BaseType -eq [Enum]
 
         if($isObjCommonType -and -not $isObjArray)
         { 
-            $obj =  [Convert]::ChangeType($node.InnerText, $objType)
+            $currentNode.InnerText = $obj.ToString() 
+        }
+        elseif($isObjEnum)
+        { 
+            $objEnumValue = [Enum]::Parse($objType, $obj).value__
+            $currentNode.InnerText = $objEnumValue 
         }
         elseif ($isObjArray)
-        {
-           [XmlNode] $anyChildNode = ($node.ChildNodes | select -First 1)
+        {        
+            $anyChild = ($obj | Where-Object { $_ -ne $null } | select -First 1)
             
-            if ($anyChildNode -eq $null) { return $obj }
+            if ($anyChild -eq $null) { return $currentNode }
+            $childNodeName = $anyChild.GetType().Name
 
-            $a = $objType 
+            $obj | ForEach-Object { 
+                if($_ -ne $null) { 
+                    $childNode = [XmlHelper]::SerializeObjToXmlNode($_, $doc, $childNodeName)
+                    $currentNode.AppendChild($childNode) 
+                }
+            }
         }
         else
         {
             $objProps = $objType.GetProperties()
             $objProps | ForEach-Object {
+                [PropertyInfo]$prop = $_
+                
+                $propValue = $prop.GetValue($obj)
+                
+                if($propValue -eq $null)
+                { return }
+
+                $isPropString = $prop.PropertyType -eq [String]
+                $isPropArray = $prop.PropertyType.BaseType -eq [Array]
+                $isPropEnum= $prop.PropertyType.BaseType -eq [Enum]
+                $isPropCommonTypeExceptArray = ($prop.PropertyType.FullName.StartsWith('System')) -and (-not $isPropArray -or $isPropString)
+
+                if($isPropCommonTypeExceptArray)
+                {                  
+                    $currentNode.SetAttribute($prop.Name, $propValue)
+                }
+                elseif($isPropEnum)
+                {
+                    $enumValue = [Enum]::Parse($prop.PropertyType, $propValue).value__
+                    $currentNode.SetAttribute($prop.Name, $enumValue)
+                }
+                else
+                {
+                     [XmlElementAttribute]$xmlElementAttr = [Attribute]::GetCustomAttribute($prop, [XmlElementAttribute])
+                     [string] $nextNodeName = if([string]::IsNullOrEmpty($xmlElementAttr.ElementName)) {$prop.Name} Else {$xmlElementAttr.ElementName}  
+                     $childNode = [XmlHelper]::SerializeObjToXmlNode($propValue, $doc, $nextNodeName)
+                     $currentNode.AppendChild($childNode)
+                }
+            }
+        }
+        return $currentNode
+    }
+
+    hidden static [Object] DeserializeNode([Type] $objType, [XmlNode] $node)
+    {
+        $isObjArray = $objType.BaseType -eq [Array]
+        $isObjCommonType = $objType.FullName.StartsWith('System')
+        $isObjEnum= $objType.BaseType -eq [Enum]
+
+        if($isObjCommonType -and -not $isObjArray)
+        {           
+            $obj = [Convert]::ChangeType($node.InnerText, $objType)
+        }
+        elseif($isObjEnum)
+        {
+             $obj = [Enum]::Parse($objType, $node.InnerText)
+        }
+        elseif ($isObjArray)
+        {
+            [Type] $arrayElementType = $objType.GetElementType()
+            [XmlNode] $anyChildNode = ($node.ChildNodes | Select-Object -First 1)
+            
+            if ($anyChildNode -eq $null) { return [Array]::CreateInstance($arrayElementType, 0) }
+
+            [Array]$obj = [Array]::CreateInstance($arrayElementType, $node.ChildNodes.Count);
+
+            $nodeIndex = 0
+            $node.ChildNodes | ForEach-Object { 
+                [XmlNode]$childNode = $_
+                $arrayItem = [XmlHelper]::DeserializeNode($arrayElementType, $childNode)
+                $obj[$nodeIndex] = $arrayItem
+                $nodeIndex += 1
+            }
+             
+        }
+        else
+        {
+            $obj = [Activator]::CreateInstance($objType);
+            $objProps = $objType.GetProperties()
+            $objProps | ForEach-Object {
                 [PropertyInfo]$prop = $_ 
                 $isPropString = $prop.PropertyType -eq [String]
                 $isPropArray = $prop.PropertyType.BaseType -eq [Array]
+                $isPropEnum= $prop.PropertyType.BaseType -eq [Enum]
                 $isPropCommonType = ($prop.PropertyType.FullName.StartsWith('System')) -and (-not $isPropArray -or $isPropString)
 
                 if($isPropCommonType)
@@ -124,38 +161,30 @@ class Helper
 
                     $prop.SetValue($obj, [Convert]::ChangeType($nodeAttr.Value, $prop.PropertyType))                    
                 }
+                elseif($isPropEnum)
+                {
+                    $nodeAttr = $node.Attributes.GetNamedItem($prop.Name)
+                   
+                    if($nodeAttr -eq $null)
+                    { return }
+
+                    $enumValue = [Enum]::Parse($prop.PropertyType, $nodeAttr.Value)
+                    $prop.SetValue($obj, $enumValue)  
+                }
                 else
                 {
                     [XmlElementAttribute]$xmlElementAttr = [Attribute]::GetCustomAttribute($prop, [XmlElementAttribute])
-                    [string] $searchNodeName = if([string]::IsNullOrEmpty($xmlElementAttr.ElementName)) {$prop.Name} Else {$xmlElementAttr.ElementName}  
-                    [XmlNode] $matchedNode = ($node.ChildNodes | Where-Object { $_.Name -eq $searchNodeName } | Select-Object -First 1)
+                    [string] $searchNodeName = [CH]::Ternary([string]::IsNullOrEmpty($xmlElementAttr.ElementName), $prop.Name, $xmlElementAttr.ElementName)  
+                    [XmlNode] $matchedNode = ($node.ChildNodes | Where-Object { $_.LocalName -eq $searchNodeName } | Select-Object -First 1)
                     
-                    $propValue = [CH]::Ternary($matchedNode -eq $null, $null, [Helper]::DeserializeNode($prop.PropertyType, $matchedNode))  
+                    $propValue = [CH]::Ternary($matchedNode -eq $null, $null, [XmlHelper]::DeserializeNode($prop.PropertyType, $matchedNode))  
                     $prop.SetValue($obj, $propValue)          
                 }
             }
         }
 
         return $obj
-
-        # create obj
-        # check its type
-        # if (is system type)
-        #    set value for object from innerText of node
-        #    + return object
-        # if (array)
-        #  check that $childNode.Name == arrayElementType
-        #  foreach($childNode in $node.ChildNodes)
-        #     obj.Add(elementType, $childNode    
-        # if (complex)
-        #   foreach($prop in $objType.GetProperties)
-        #     if $prop is system
-        #        locate attribute + set prop value in obj
-        #     if $ prop is complex 
-        #        $nextNode = locate node in childNodes
-        #        $prop.SetValue(Deserialize($prop.Type, $nextNode)
     }
-
 }
 
 class Child
@@ -171,6 +200,8 @@ class Person
     #if w/o attribute then this value will go to attribute to the parent node
     [string] $Name
     [string] $LastName
+    [CommandsEnum] $Command
+    [CommandsEnum[]] $Commands
 
     #if attribute specified - new node will be created with Prop name or custom value
     [XmlElement("Child")]
@@ -196,9 +227,12 @@ $child2.ChildName = 'Artsiom'
 $parent = [Person]::new()
 $parent._Child = $child
 $parent.Name = 'Ivan'
+$parent.Command = [CommandsEnum]::Run
+$parent.Commands = @([CommandsEnum]::Run,[CommandsEnum]::OpenVisualStudio)
 $parent.LastName = 'Ivanov'
 $parent.Proffs = @('prof1','prof2')
 $parent.Children = @($child2, $child)
-[Helper]::Serialize($parent, 'C:\work\test.xml')
-$deserialized = [Helper]::Deserialize([Person],'C:\work\test.xml')
+[XmlHelper]::Serialize($parent, 'C:\work\test.xml')
+$deserialized = [XmlHelper]::Deserialize([Person],'C:\work\test.xml')
+
 #Get-Member -InputObject $parent -MemberType Properties
