@@ -1,5 +1,7 @@
 class Global
 {
+    static [string] $ErrorPreferenceOption = "stop"
+
 	static [string] $RootPath
     
     static [string] $CommandsPath = "\_StorageFiles\Commands.xml"

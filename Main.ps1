@@ -17,8 +17,8 @@ class Main
     Init($scriptRootPath)
     {
         [Global]::RootPath = $scriptRootPath
-        $this.StorageProvider = [StorageProvider]::new()   
         $this.Logger = [Logger]::new()   
+        $this.StorageProvider = [StorageProvider]::new($this.Logger)   
         $this.ComHandlersFactory = [CommandHanldersFactory]::new($this.StorageProvider, $this.Logger)   
     }
 
@@ -30,6 +30,7 @@ class Main
        
         while($userInput -ne $quitComAlias)
         {
+            Write-Host ''
             $userInput = Read-Host "($quitComAlias to exit) command"     
             $this.ProcessCommand($userInput)     
         }
@@ -42,9 +43,9 @@ class Main
         if($commandStr -eq $commandStorage.GetAlias([CommandsEnum]::Quit))
         { return }
 
-        $commandItems = $this.ExtractCommandItems($commandStr)
-        $commandAlias = $commandItems.Item1
-        $commandParams = $commandItems.Item2
+        $commandItems = $this.ExtractCommandNameAndParams($commandStr)
+        $commandAlias = $commandItems.Item1.Trim()
+        $commandParams = $commandItems.Item2.Trim()
 
         [Command]$command = $commandStorage.GetByAlias($commandAlias)
         if($command -eq $null)
@@ -64,9 +65,11 @@ class Main
         $handler.Handle()
     }
 
-    [System.Tuple[string,string]] ExtractCommandItems($commandString)
+    [System.Tuple[string,string]] ExtractCommandNameAndParams($commandString)
     {
+        $commandString = $commandString.Trim()
         $commandDelimiterIndex = $commandString.IndexOf(' ');
+
         if($commandDelimiterIndex -eq -1)
         {
             return [System.Tuple[string,string]]::new($commandString, [string]::Empty)
@@ -81,6 +84,7 @@ class Main
 }
 
 # main
+$ErrorActionPreference = [Global]::ErrorPreferenceOption
 $main = New-Object Main
 $main.Init($PSScriptRoot)
 $main.Start()

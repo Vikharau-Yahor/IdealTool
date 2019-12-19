@@ -1,12 +1,21 @@
+using namespace System.Collections.Generic
+using namespace System.IO
+
 using module .\_CommandHandlerBase.psm1
-using module ..\Global.psm1
-using module ..\Logger.psm1
+using module ..\Models\GitRepo.psm1
 using module ..\Storages\_StorageProvider.psm1
 using module ..\Utils\XMLHelper.psm1
+using module ..\Global.psm1
+using module ..\Logger.psm1
 
 class ScanHandler : CommandHandlerBase
 {
     [string[]]$gitPathesElementsIgnoreList = @("node_modules")
+    [string] $gitConfigRepoNameKey = "url"
+    [string] $gitNameSeparatorInUrl = ":"
+    [string] $gitConfigRelativePath = "\.git\config"
+    [string] $gitConfigFolder = ".git"
+    [string] $gitGlobalIdentifierPart = 'git#'
 
     ScanHandler ([StorageProvider]$storageProvider, [Logger] $logger, [string]$commandParams) : base($storageProvider, $logger, $commandParams)
     {  }
@@ -30,47 +39,54 @@ class ScanHandler : CommandHandlerBase
             return
         }
 
-        $this.SearchGitRepos($folderFullPath)
-       
+        $gitRepos = $this.SearchGitRepos($folderFullPath)    
+        $this.storageProvider.GetGitReposStorage().Save($gitRepos)
     }
 
-    [void] SearchGitRepos([string] $searchPath)
+    [GitRepo[]] SearchGitRepos([string] $searchPath)
     {
-        $gitRepo1 = [gitRepo]::new()
-        $gitRepo1.Name = 'Test1'
-        $gitRepo1.Path = 'C:\work\Test'
 
-        $gitRepo2 = [gitRepo]::new()
-        $gitRepo2.Name = 'Test2'
-        $gitRepo2.Path = 'C:\work\Test2'
+        $foundItems = Get-ChildItem -Path $searchPath $this.gitConfigFolder -Recurse -Directory -Force
+        $gitReposFolders = $foundItems | Where-Object { $this.IsNotInIgnoreList($_.FullName) }      
+        [List[GitRepo]] $gitRepos = @()
 
-        $gitRepos = [gitRepos]::new()
-        $gitRepos.gitRepo = @($gitRepo1, $gitRepo2)
-
-        [Type] $objType = $gitRepos.GetType()
-        [System.Xml.Serialization.XmlSerializer] $serializer = [System.Xml.Serialization.XmlSerializer]::new($gitRepos.GetType());
-
-        $foundItems = Get-ChildItem -Path $searchPath\.git -Recurse
-        $gitReposPathes = $foundItems | Where-Object { $this.IsNotInIgnoreList($_.FullName) }      
-
-        $this.Logger.LogInfo("$($gitReposPathes.Length)")   
+        $gitReposFolders | ForEach-Object {
+            $gitFolder = $_.FullName | Split-Path
+            [GitRepo]$gitRepo = [GitRepo]::new()
+            $gitRepoUrl = $this.GetGitRepoUrl($gitFolder)
+            $gitRepoName=''
+            if($gitRepoUrl.StartsWith('git'))
+            {
+                $gitRepoName = $gitRepoUrl.Split(@($this.gitNameSeparatorInUrl))[1].Trim()
+            }
+            else
+            {
+                $gitNameparts = $gitRepoUrl.Split(@('/'),[System.StringSplitOptions]::RemoveEmptyEntries) | Select -Skip 2
+                $gitRepoName = [string]::Join('/', $gitNameparts)
+            }
+            $gitRepo.Path = $gitFolder
+            $gitRepo.Url = $gitRepoUrl
+            $gitRepo.Name = $gitRepoName
+            $gitRepo.Id = $this.gitGlobalIdentifierPart + $gitRepoName
+            $gitRepos.Add($gitRepo)
+        }
+        $this.Logger.LogInfo("Git-repositories found: $($gitRepos.Count)") 
+        return $gitRepos.ToArray()  
     }
+
+    [string] GetGitRepoUrl([string] $repoPath)
+    {
+        [string[]]$gitConfigContent = [File]::ReadAllLines($repoPath + $this.gitConfigRelativePath)
+
+        [string] $configUrlLine = $gitConfigContent | Where-Object { $_.Trim().StartsWith($this.gitConfigRepoNameKey) } | Select-Object -First 1
+
+        $gitRepoUrl = $configUrlLine.Split(@('='))[1].Trim()
+        return $gitRepoUrl
+    }
+
 
     [bool] IsNotInIgnoreList([string] $path)
     {
         return ($this.gitPathesElementsIgnoreList | Where-Object { $path.Contains($_) }).Count -eq 0
     }
-}
-
-
-
-class gitRepos
-{
-    [gitRepo[]] $gitRepo
-}
-
-class gitRepo
-{
-    [String] $Name
-    [String] $Path
 }

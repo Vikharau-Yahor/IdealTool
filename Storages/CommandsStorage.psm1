@@ -1,20 +1,21 @@
 using namespace System.Collections.Generic
-using namespace System.Xml
 
 using module ..\Models\CommandsEnum.psm1
 using module ..\Models\Command.psm1
 using module ..\Utils\XmlHelper.psm1
+using module ..\Logger.psm1
 
 class CommandsStorage
 { 
-    #object props
     [Dictionary[string, Command]] $CommandsByAlias
     [Dictionary[CommandsEnum, Command]] $CommandsById
     [string] $ConfigFullPath
+    [Logger] $Logger
 
-    CommandsStorage([string]$cfgPath)
+    CommandsStorage([string]$cfgPath, [Logger] $logger)
     {
         $this.ConfigFullPath = $cfgPath
+        $this.Logger = $logger
         $this.Reload()
     }
     
@@ -28,8 +29,7 @@ class CommandsStorage
             $command = $_
             $this.CommandsByAlias.Add($command.Alias,$command)  
             $this.CommandsById.Add($command.Id,$command)   
-        }
-        return     
+        }    
     }
 
     [Command] GetByAlias([string] $commAlias)

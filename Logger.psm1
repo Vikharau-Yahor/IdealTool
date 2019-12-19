@@ -1,3 +1,5 @@
+using module .\Global.psm1
+
 class Logger
 {
     LogInfo($message)
@@ -7,7 +9,9 @@ class Logger
 
     LogError([string] $errorText)
     {
+        $ErrorActionPreference = 'Continue'
         Write-Error -Message "[$($this.GetCurrentTime()) Error]: $errorText"
+        $ErrorActionPreference = [Global]::ErrorPreferenceOption
     }
 
     LogError([Exception] $exception)

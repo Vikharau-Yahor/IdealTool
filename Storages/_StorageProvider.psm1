@@ -1,18 +1,23 @@
 using module .\CommandsStorage.psm1
+using module .\GitReposStorage.psm1
 using module ..\Global.psm1
+using module ..\Logger.psm1
 
 class StorageProvider
 {
-    [CommandsStorage] $CommandsStorage;
+    hidden [CommandsStorage] $CommandsStorage
+    hidden [GitReposStorage] $GitReposStorage
 
-    StorageProvider()
+    StorageProvider([Logger] $logger)
     {
-        $this.CommandsStorage = [CommandsStorage]::new("$([Global]::RootPath)$([Global]::CommandsPath)")  
+        $this.CommandsStorage = [CommandsStorage]::new("$([Global]::RootPath)$([Global]::CommandsPath)", [Logger] $logger)  
+        $this.GitReposStorage = [GitReposStorage]::new("$([Global]::RootPath)$([Global]::GitReposPath)", [Logger] $logger)
     }
 
     Reload()
     {
         $this.CommandsStorage.Reload()
+        $this.GitReposStorage.Reload()
     }
 
     [CommandsStorage] GetCommandsStorage()
@@ -20,4 +25,8 @@ class StorageProvider
         return $this.CommandsStorage
     }
 
+    [GitReposStorage] GetGitReposStorage()
+    {
+        return $this.GitReposStorage
+    }
 }
