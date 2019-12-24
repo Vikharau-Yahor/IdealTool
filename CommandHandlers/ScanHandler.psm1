@@ -3,8 +3,10 @@ using namespace System.IO
 
 using module .\_CommandHandlerBase.psm1
 using module ..\Models\GitRepo.psm1
+using module ..\Models\EntityType.psm1
 using module ..\Storages\_StorageProvider.psm1
 using module ..\Utils\XMLHelper.psm1
+using module ..\Utils\EntityHelper.psm1
 using module ..\Global.psm1
 using module ..\Logger.psm1
 
@@ -15,7 +17,6 @@ class ScanHandler : CommandHandlerBase
     [string] $gitNameSeparatorInUrl = ":"
     [string] $gitConfigRelativePath = "\.git\config"
     [string] $gitConfigFolder = ".git"
-    [string] $gitGlobalIdentifierPart = 'git#'
 
     ScanHandler ([StorageProvider]$storageProvider, [Logger] $logger, [string]$commandParams) : base($storageProvider, $logger, $commandParams)
     {  }
@@ -54,24 +55,31 @@ class ScanHandler : CommandHandlerBase
             $gitFolder = $_.FullName | Split-Path
             [GitRepo]$gitRepo = [GitRepo]::new()
             $gitRepoUrl = $this.GetGitRepoUrl($gitFolder)
-            $gitRepoName=''
-            if($gitRepoUrl.StartsWith('git'))
-            {
-                $gitRepoName = $gitRepoUrl.Split(@($this.gitNameSeparatorInUrl))[1].Trim()
-            }
-            else
-            {
-                $gitNameparts = $gitRepoUrl.Split(@('/'),[System.StringSplitOptions]::RemoveEmptyEntries) | Select -Skip 2
-                $gitRepoName = [string]::Join('/', $gitNameparts)
-            }
+
             $gitRepo.Path = $gitFolder
             $gitRepo.Url = $gitRepoUrl
-            $gitRepo.Name = $gitRepoName
-            $gitRepo.Id = $this.gitGlobalIdentifierPart + $gitRepoName
+            $gitRepo.Name = $this.ExtractGitName($gitRepoUrl)
+
+            $gitRepo.Id = [EntityHelper]::GenerateId([EntityType]::Git, $gitRepo.Name, $gitRepo.Path)
             $gitRepos.Add($gitRepo)
         }
         $this.Logger.LogInfo("Git-repositories found: $($gitRepos.Count)") 
         return $gitRepos.ToArray()  
+    }
+
+    [string] ExtractGitName([string] $gitUrlStr)
+    {
+        $gitRepoName=''
+        if($gitUrlStr.StartsWith('git'))
+        {
+            $gitRepoName = $gitUrlStr.Split(@($this.gitNameSeparatorInUrl))[1].Trim()
+        }
+        else
+        {
+            $gitNameparts = $gitUrlStr.Split(@('/'),[System.StringSplitOptions]::RemoveEmptyEntries) | Select -Skip 2
+            $gitRepoName = [string]::Join('/', $gitNameparts)
+        }
+        return $gitRepoName
     }
 
     [string] GetGitRepoUrl([string] $repoPath)
