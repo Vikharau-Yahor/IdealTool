@@ -40,7 +40,7 @@ class ScanHandler : CommandHandlerBase
             return
         }
 
-        $gitRepos = $this.SearchGitRepos($folderFullPath)    
+        [GitRepo[]] $gitRepos = $this.SearchGitRepos($folderFullPath)    
         $this.storageProvider.GetGitReposStorage().Save($gitRepos)
     }
 
@@ -72,12 +72,12 @@ class ScanHandler : CommandHandlerBase
         $gitRepoName=''
         if($gitUrlStr.StartsWith('git'))
         {
-            $gitRepoName = $gitUrlStr.Split(@($this.gitNameSeparatorInUrl))[1].Trim()
+            $gitRepoNameParts = $gitUrlStr.Split(@($this.gitNameSeparatorInUrl))[1].Trim()
+            $gitRepoName = $gitRepoNameParts.Split(@('/'),[System.StringSplitOptions]::RemoveEmptyEntries) | Select -Last 1
         }
         else
         {
-            $gitNameparts = $gitUrlStr.Split(@('/'),[System.StringSplitOptions]::RemoveEmptyEntries) | Select -Skip 2
-            $gitRepoName = [string]::Join('/', $gitNameparts)
+            $gitRepoName = $gitUrlStr.Split(@('/'),[System.StringSplitOptions]::RemoveEmptyEntries) | Select -Last 1
         }
         return $gitRepoName
     }
