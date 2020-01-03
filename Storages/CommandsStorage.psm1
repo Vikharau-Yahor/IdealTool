@@ -2,7 +2,7 @@ using namespace System.Collections.Generic
 
 using module ..\Models\CommandsEnum.psm1
 using module ..\Models\Command.psm1
-using module ..\Utils\XmlHelper.psm1
+using module ..\Utils\Helpers\XmlHelper.psm1
 using module ..\Logger.psm1
 
 class CommandsStorage

@@ -1,4 +1,4 @@
-using module ..\Models\EntityType.psm1
+using module ..\..\Models\EntityType.psm1
 using module .\CommonHelper.psm1
 
 class EntityHelper

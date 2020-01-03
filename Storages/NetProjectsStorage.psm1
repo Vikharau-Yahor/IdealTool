@@ -1,7 +1,7 @@
 using namespace System.Collections.Generic
 
 using module ..\Models\NetModels.psm1
-using module ..\Utils\XmlHelper.psm1
+using module ..\Utils\Helpers\XmlHelper.psm1
 using module ..\Logger.psm1
 
 class NetProjectsStorage
@@ -11,7 +11,7 @@ class NetProjectsStorage
     [NProject[]] $PrimaryProjects
     [Logger] $Logger
 
-    GitReposStorage([string]$cfgPath, [Logger] $logger)
+    NetProjectsStorage([string]$cfgPath, [Logger] $logger)
     {
         $this.ConfigFullPath = $cfgPath
         $this.Logger = $logger

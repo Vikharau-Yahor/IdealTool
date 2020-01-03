@@ -1,16 +1,15 @@
-
 class CH
 {
     # c# ternary operator: 
-    # $condition ? $ternaryTrueResult : $ternaryFalseResult
-    static [Object] Ternary([bool] $condition, [Object] $ternaryTrueResult, [Object] $ternaryFalseResult)
+    # $condition ? $trueResult : $falseResult
+    static [Object] Ternary([bool] $condition, [Object] $trueResult, [Object] $falseResult)
     {
         if($condition) { 
-            return $ternaryTrueResult 
+            return $trueResult 
         } 
         else 
         { 
-            return $ternaryFalseResult
+            return $falseResult
         }
     }
 

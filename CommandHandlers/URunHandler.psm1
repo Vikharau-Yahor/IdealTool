@@ -1,6 +1,6 @@
 using module .\_CommandHandlerBase.psm1
 using module ..\Global.psm1
-using module ..\Utils\StringHelper.psm1
+using module ..\Utils\Helpers\StringHelper.psm1
 using module ..\Storages\_StorageProvider.psm1
 using module ..\Logger.psm1
 

@@ -3,7 +3,7 @@ using namespace System.IO
 using namespace System.Reflection
 using namespace System.Xml
 using namespace System.Xml.Serialization
-using module ..\Utils\CommonHelper.psm1
+using module ..\Utils\Helpers\CommonHelper.psm1
 using module ..\Models\CommandsEnum.psm1
 
 class XmlHelper

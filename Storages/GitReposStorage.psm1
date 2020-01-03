@@ -1,7 +1,7 @@
 using namespace System.Collections.Generic
 
 using module ..\Models\GitRepo.psm1
-using module ..\Utils\XmlHelper.psm1
+using module ..\Utils\Helpers\XmlHelper.psm1
 using module ..\Logger.psm1
 
 class GitReposStorage
