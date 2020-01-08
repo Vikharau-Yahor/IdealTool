@@ -1,5 +1,6 @@
 enum EntityType
 {
     Git = 0
-    NProj = 1
+    NSolution = 1
+    NProj = 2
 }

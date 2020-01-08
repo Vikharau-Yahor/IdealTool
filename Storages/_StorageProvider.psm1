@@ -32,4 +32,9 @@ class StorageProvider
     {
         return $this.GitReposStorage
     }
+
+    [NetProjectsStorage] GetNetProjectsStorage()
+    {
+        return $this.NetProjectsStorage
+    }
 }

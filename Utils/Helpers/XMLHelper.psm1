@@ -82,6 +82,9 @@ class XmlHelper
                 if($propValue -eq $null)
                 { return }
 
+                if([Attribute]::GetCustomAttribute($prop, [XmlIgnoreAttribute]) -ne $null)
+                { return }
+
                 $isPropString = $prop.PropertyType -eq [String]
                 $isPropArray = $prop.PropertyType.BaseType -eq [Array]
                 $isPropEnum= $prop.PropertyType.BaseType -eq [Enum]
@@ -175,8 +178,13 @@ class XmlHelper
                     [XmlElementAttribute]$xmlElementAttr = [Attribute]::GetCustomAttribute($prop, [XmlElementAttribute])
                     [string] $searchNodeName = [CH]::Ternary([string]::IsNullOrEmpty($xmlElementAttr.ElementName), $prop.Name, $xmlElementAttr.ElementName)  
                     [XmlNode] $matchedNode = ($node.ChildNodes | Where-Object { $_.LocalName -eq $searchNodeName } | Select-Object -First 1)
-                    
-                    $propValue = [CH]::Ternary($matchedNode -eq $null, $null, [XmlHelper]::DeserializeNode($prop.PropertyType, $matchedNode))  
+                    $propValue = $null
+
+                    if($matchedNode -ne $null)
+                    {
+                        $propValue = [CH]::Ternary($matchedNode -eq $null, $null, [XmlHelper]::DeserializeNode($prop.PropertyType, $matchedNode)) 
+                    } 
+
                     $prop.SetValue($obj, $propValue)          
                 }
             }

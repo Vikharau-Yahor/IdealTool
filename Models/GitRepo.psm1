@@ -2,11 +2,11 @@ using namespace System.Xml.Serialization
 
 Class GitRepo
 {
-    [string] $Id
-    [string] $Alias
     [string] $Name
+    [string] $Alias
     [string] $Url
     [string] $Path
+    [string] $Id
 }
 
 [XmlRoot("GitRoot")]

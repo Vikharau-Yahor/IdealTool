@@ -8,20 +8,21 @@ Class NetSolutionsContainer
 
 class NSolution
 {
-    [string] $Id
-    [string] $Alias
     [string] $Name
+    [string] $Alias
     [string] $Path
-    [Bool] $IsPrimary
+    [string] $Id
+    [NProject[]] $NProjects
 }
 
 class NProject
 {
-    [string] $Id
-    [string] $Alias
     [string] $Name
+    [string] $Alias
+    [string] $Id   
     [string] $RelativePath
     [Bool] $IsPrimary
+    [XmlIgnore()]
     [NSolution] $Solution
 
     [string] GetFullPath()
