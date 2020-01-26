@@ -38,7 +38,7 @@ class URunHandler : CommandHandlerBase
             return
         }
 
-        start powershell.exe -ArgumentList "-File $scriptFullPath" -Verb runAs
+        Start-Process powershell.exe -ArgumentList "-File $scriptFullPath" -Verb runAs
 
         $this.Logger.LogInfo("Script: '$scriptName.ps1' has successfully started")
     }

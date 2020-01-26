@@ -52,4 +52,4 @@ Command list:
 ***********************************************************
 PROBLEMS:
 * [Resolved] Store different types of project [for certain type of project -- its own config, but all active entities must be in 'active-entities.config']
-* [Resolved]Store multiple projects for net solution with several alive (eg. io repo: server.core, web, server.valuations, tests) [net-projects.config, see template above]
+* [Resolved] Store multiple projects for net solution with several alive (eg. io repo: server.core, web, server.valuations, tests) [net-projects.config, see template above]
