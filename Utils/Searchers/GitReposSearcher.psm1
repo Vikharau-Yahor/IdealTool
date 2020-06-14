@@ -37,7 +37,7 @@ class GitReposSearcher
             $gitRepo.Path = $gitFolder
             $gitRepo.Url = $gitRepoUrl
             $gitRepo.Name = $this.ExtractGitName($gitRepoUrl)
-
+            $gitRepo.IsActive = $true
             $gitRepo.Id = [ActionItemHelper]::GenerateId([ActionItemType]::Git, $gitRepo.Name, $gitRepo.Path)
             $gitRepos.Add($gitRepo)
         }

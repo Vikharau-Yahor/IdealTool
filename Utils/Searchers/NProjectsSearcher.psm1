@@ -33,6 +33,7 @@ class NProjectsSearcher
             $solutionPath = $_
             [NSolution] $solution = [NSolution]::new()
             $solution.Name = $_.Name
+            $solution.IsActive = $true
             $solution.Path = Split-Path $_.FullName
             $solution.Id = [ActionItemHelper]::GenerateId([ActionItemType]::NSolution, $solution.Name, $solution.Path)
             $solutions.Add($solution)
@@ -51,6 +52,7 @@ class NProjectsSearcher
                 {
                     $project.Name = $relativeProjectPath | Split-Path -Leaf
                     $project.Path = $projectFullPath
+                    $project.IsActive = $project.IsPrimary()
                     $project.RelativePath = $relativeProjectPath | Split-Path
                     $project.Type = $this.NProjectTypeExtractor.ExtractType("$($solution.Path)\$($relativeProjectPath)")
                     $project.Id = [ActionItemHelper]::GenerateId([ActionItemType]::NProj, $project.Name, "$($solution.Path)\$($project.RelativePath)")

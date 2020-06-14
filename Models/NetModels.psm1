@@ -21,6 +21,12 @@ class NProject : BaseActionItem
     [XmlIgnore()]
     [NSolution] $Solution
 
+    [bool] IsPrimary()
+    {
+        $isPrimary = ($this.Type -ne [NProjectType]::Dll) -and ($this.Type -ne [NProjectType]::Test)
+        return $isPrimary
+    }
+
 }
 
 enum NProjectType
