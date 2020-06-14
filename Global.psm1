@@ -9,7 +9,7 @@ class Global
     static [string] $CommandsPath = "\_StorageFiles\Static\Commands.xml"
     
     # cache storages - used to restore data for new dynamic storage items which where used before 
-    static [string] $CachedActionItemsPath = "\_StorageFiles\Cache\ActionItemsCache.xml"
+    static [string] $CachedActionItemsPath = "\_StorageFiles\Cache\CachedActionItems.xml"
 
     #dynamic storage pathes - dynamically created via commands, all necessary data restored from cache (if existing)
     static [string] $ActionItemsPath = "\_StorageFiles\Dynamic\ActionItems.xml"

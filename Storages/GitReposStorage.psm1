@@ -1,9 +1,11 @@
 using namespace System.Collections.Generic
 
 using module .\ActionItemsStorage.psm1
+using module .\CachedActionItemsStorage.psm1
 using module ..\Models\ActionItemType.psm1
 using module ..\Models\GitRepo.psm1
 using module ..\Utils\Helpers\XmlHelper.psm1
+using module ..\Utils\Helpers\CommonHelper.psm1
 using module ..\Logger.psm1
 
 class GitReposStorage
@@ -12,11 +14,13 @@ class GitReposStorage
     [GitRepo[]] $GitRepos
     [Logger] $Logger
     [ActionItemsStorage] $ActionItemsStorage
+    [CachedActionItemsStorage] $CachedActionItemsStorage
 
-    GitReposStorage([string]$cfgPath, [ActionItemsStorage] $actionItemsStorage, [Logger] $logger)
+    GitReposStorage([string]$cfgPath, [ActionItemsStorage] $actionItemsStorage, [CachedActionItemsStorage] $cachedActionItemsStorage, [Logger] $logger)
     {
         $this.ConfigFullPath = $cfgPath
         $this.ActionItemsStorage = $actionItemsStorage
+        $this.CachedActionItemsStorage = $cachedActionItemsStorage
         $this.Logger = $logger
         $this.Reload()
     }
@@ -50,12 +54,36 @@ class GitReposStorage
             $this.Logger.LogInfo("GitStorage saves nothing because input gitRepos array is empty")
             return 
         }
+        
+        foreach($gitRepo in $gitRepos)
+        {
+            $this.CachedActionItemsStorage.Restore($gitRepo, [ActionItemType]::Git)
+        }
 
         $this.GitRepos = $gitRepos
         $this.Save()
+        $this.Logger.LogInfo("New git repositories ($($this.GitRepos.Count)) have been successfully saved to file: $($this.ConfigFullPath)")
 
         #save actionItems
         $this.ActionItemsStorage.Add($this.GitRepos, [ActionItemType]::Git)
+    }
+
+    Delete([string] $folderPath)
+    {
+        if($this.GitRepos.Count -eq 0 -or [string]::IsNullOrEmpty($folderPath))
+        { return }
+        
+        $folderPath = $folderPath.ToLower()
+        $oldReposCount = $this.GitRepos.Count
+       
+        $this.GitRepos = $this.GitRepos | Where-Object { (-not $_.Path.ToLower().StartsWith($folderPath)) }
+        $this.GitRepos = [CH]::Ternary(($this.GitRepos -eq $null), @(), $this.GitRepos) 
+        $this.Save()
+
+        $deletedReposCount = $oldReposCount - $this.GitRepos.Count
+        $this.Logger.LogInfo("Old Git repositories ($($deletedReposCount)) matched by path: '$($folderPath)' have been deleted")
+
+        $this.ActionItemsStorage.Delete($folderPath, @([ActionItemType]::Git))
     }
 
     Save()
@@ -64,6 +92,5 @@ class GitReposStorage
         $gitReposContainer.GitRepositories = $this.GitRepos
 
         [XmlHelper]::Serialize($gitReposContainer, $this.ConfigFullPath)
-        $this.Logger.LogInfo("New git repositories have been successfully saved to file: $($this.ConfigFullPath)")
     }
 }

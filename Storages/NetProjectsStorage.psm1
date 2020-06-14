@@ -1,9 +1,11 @@
 using namespace System.Collections.Generic
 
 using module .\ActionItemsStorage.psm1
+using module .\CachedActionItemsStorage.psm1
 using module ..\Models\ActionItemType.psm1
 using module ..\Models\NetModels.psm1
 using module ..\Utils\Helpers\XmlHelper.psm1
+using module ..\Utils\Helpers\CommonHelper.psm1
 using module ..\Logger.psm1
 
 class NetProjectsStorage
@@ -11,13 +13,16 @@ class NetProjectsStorage
     [string] $ConfigFullPath
     [NSolution[]] $Solutions
     [NProject[]] $PrimaryProjects
+    
     [Logger] $Logger
     [ActionItemsStorage] $ActionItemsStorage
+    [CachedActionItemsStorage] $CachedActionItemsStorage
 
-    NetProjectsStorage([string]$cfgPath, [ActionItemsStorage] $actionItemsStorage, [Logger] $logger)
+    NetProjectsStorage([string]$cfgPath, [ActionItemsStorage] $actionItemsStorage, [CachedActionItemsStorage] $cachedActionItemsStorage, [Logger] $logger)
     {
         $this.ConfigFullPath = $cfgPath
         $this.ActionItemsStorage = $actionItemsStorage
+        $this.CachedActionItemsStorage = $cachedActionItemsStorage
         $this.Logger = $logger
         $this.Reload()
     }
@@ -52,13 +57,33 @@ class NetProjectsStorage
 
     Add([NSolution[]] $nSolutions)
     {
-         if($nSolutions -eq $null -or $nSolutions.Count -eq 0)
-         { 
-            $this.Logger.LogInfo("NetProjectsStorage saves nothing because input solutions array is empty")
+        if($nSolutions -eq $null -or $nSolutions.Count -eq 0)
+        { 
+            $this.Logger.LogInfo("NetProjectsStorage saved nothing because input solutions array is empty")
             return 
-         }
-         $this.Solutions = $nSolutions
-         $this.Save()
+        }
+         
+        foreach($nSolution in $nSolutions)
+        {
+            $this.CachedActionItemsStorage.Restore($nSolution, [ActionItemType]::NSolution)
+            foreach($nProject in $nSolution.NProjects)
+            {
+                $this.CachedActionItemsStorage.Restore($nProject, [ActionItemType]::NProj)
+            }
+        }
+
+        $this.Solutions = $nSolutions
+        $this.Save()
+        
+         #save actionItems
+        [List[NProject]] $allNewProjects = @()
+
+        $this.Solutions | ForEach-Object{
+            $allNewProjects.AddRange($_.NProjects)
+        }
+        $this.ActionItemsStorage.Add($this.Solutions, [ActionItemType]::NSolution)
+        $this.ActionItemsStorage.Add($allNewProjects, [ActionItemType]::NProj)
+        $this.Logger.LogInfo("New .Net solutions ($($this.Solutions.Count)) have been successfully saved to file: $($this.ConfigFullPath)")
     }
 
     Save()
@@ -67,16 +92,23 @@ class NetProjectsStorage
         $nSolutionsContainer.NetSolutions = $this.Solutions
 
         [XmlHelper]::Serialize($nSolutionsContainer, $this.ConfigFullPath)
-        $this.Logger.LogInfo("New .net solutions have been successfully saved to file: $($this.ConfigFullPath)")
+    }
 
-        [List[NProject]] $allNewProjects = @()
+    DeleteSolutions([string] $folderPath)
+    {
+        if($this.Solutions.Count -eq 0 -or [string]::IsNullOrEmpty($folderPath))
+        { return }
+        
+        $folderPath = $folderPath.ToLower()
+        $oldSolutionsCount = $this.Solutions.Count
 
-        $this.Solutions | ForEach-Object{
-            $allNewProjects.AddRange($_.NProjects)
-        }
+        $this.Solutions = $this.Solutions | Where-Object { (-not $_.Path.ToLower().StartsWith($folderPath)) }
+        $this.Solutions = [CH]::Ternary(($this.Solutions -eq $null), @(), $this.Solutions) 
+        $this.Save()
 
-        #save actionItems
-        $this.ActionItemsStorage.Add($this.Solutions, [ActionItemType]::NSolution)
-        $this.ActionItemsStorage.Add($allNewProjects, [ActionItemType]::NProj)
+        $deletedSolutionsCount = $oldSolutionsCount - $this.Solutions.Count
+        $this.Logger.LogInfo("Old .Net solutions ($($deletedSolutionsCount)) matched by path: '$($folderPath)' have been deleted")
+
+        $this.ActionItemsStorage.Delete($folderPath, @([ActionItemType]::NSolution, [ActionItemType]::NProj))
     }
 }
