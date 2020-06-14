@@ -43,11 +43,11 @@ class ScanHandler : CommandHandlerBase
 
         # git repos search
         [GitRepo[]] $gitRepos = $this.GitReposSearcher.SearchGitRepos($folderFullPath)    
-        $this.storageProvider.GetGitReposStorage().Save($gitRepos)
+        $this.storageProvider.GetGitReposStorage().Add($gitRepos)
 
         # net solutions/projects search
         [NSolution[]] $solutions = $this.NProjectsSearcher.SearchSolutions($folderFullPath)  
-        $this.storageProvider.GetNetProjectsStorage().Save($solutions)
+        $this.storageProvider.GetNetProjectsStorage().Add($solutions)
     }
 
 }

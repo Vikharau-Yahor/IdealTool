@@ -1,6 +1,7 @@
 using namespace System.Collections.Generic
 
 using module .\ActionItemsStorage.psm1
+using module ..\Models\ActionItemType.psm1
 using module ..\Models\GitRepo.psm1
 using module ..\Utils\Helpers\XmlHelper.psm1
 using module ..\Logger.psm1
@@ -42,18 +43,27 @@ class GitReposStorage
         }
     }
 
-    Save([GitRepo[]] $gitRepos)
+    Add([GitRepo[]] $gitRepos)
     {
-         if($gitRepos -eq $null -or $gitRepos.Count -eq 0)
-         { 
+        if($gitRepos -eq $null -or $gitRepos.Count -eq 0)
+        { 
             $this.Logger.LogInfo("GitStorage saves nothing because input gitRepos array is empty")
             return 
-         }
+        }
 
-         [GitReposContainer] $gitReposContainer = [GitReposContainer]::new()
-         $gitReposContainer.GitRepositories = $gitRepos
+        $this.GitRepos = $gitRepos
+        $this.Save()
 
-         [XmlHelper]::Serialize($gitReposContainer, $this.ConfigFullPath)
-         $this.Logger.LogInfo("New git repositories have been successfully saved to file: $($this.ConfigFullPath)")
+        #save actionItems
+        $this.ActionItemsStorage.Add($this.GitRepos, [ActionItemType]::Git)
+    }
+
+    Save()
+    {
+        [GitReposContainer] $gitReposContainer = [GitReposContainer]::new()
+        $gitReposContainer.GitRepositories = $this.GitRepos
+
+        [XmlHelper]::Serialize($gitReposContainer, $this.ConfigFullPath)
+        $this.Logger.LogInfo("New git repositories have been successfully saved to file: $($this.ConfigFullPath)")
     }
 }

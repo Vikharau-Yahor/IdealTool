@@ -9,10 +9,3 @@ enum CommandsEnum
     OpenRider = 5
     SetAlias = 6
 }
-
-# TO DO
-# - entityStorage (adds, get meta info (id, alias, type) for entities by alias)
-# - xml file for entity storage
-# - set alias command - get all git-projects, net projects and etc which has no aliases in entity storage; request input from user; add new entity to entity storage
-#
-#

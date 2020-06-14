@@ -21,12 +21,6 @@ class NProject : BaseActionItem
     [XmlIgnore()]
     [NSolution] $Solution
 
-    [string] GetFullPath()
-    {
-       $fullPath = $this.Path
-       return $fullPath
-    }
-
 }
 
 enum NProjectType

@@ -50,9 +50,9 @@ class NProjectsSearcher
                 if(Test-Path $projectFullPath)
                 {
                     $project.Name = $relativeProjectPath | Split-Path -Leaf
+                    $project.Path = $projectFullPath
                     $project.RelativePath = $relativeProjectPath | Split-Path
                     $project.Type = $this.NProjectTypeExtractor.ExtractType("$($solution.Path)\$($relativeProjectPath)")
-                    #$project.IsPrimary = $project.Type -ne [NProjectType]::Dll
                     $project.Id = [ActionItemHelper]::GenerateId([ActionItemType]::NProj, $project.Name, "$($solution.Path)\$($project.RelativePath)")
                     $projects.Add($project)
                 }
