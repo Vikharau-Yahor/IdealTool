@@ -1,12 +1,10 @@
 using namespace System.Xml.Serialization
 
-Class GitRepo
+using module .\_BaseActionItem.psm1
+
+Class GitRepo : BaseActionItem
 {
-    [string] $Name
-    [string] $Alias
     [string] $Url
-    [string] $Path
-    [string] $Id
 }
 
 [XmlRoot("GitRoot")]

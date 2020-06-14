@@ -1,4 +1,4 @@
-enum EntityType
+enum ActionItemType
 {
     Git = 0
     NSolution = 1

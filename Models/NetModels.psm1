@@ -1,25 +1,20 @@
 using namespace System.Xml.Serialization
 
+using module .\_BaseActionItem.psm1
+
 [XmlRoot("NetRoot")]
 Class NetSolutionsContainer
 {
     [NSolution[]] $NetSolutions
 }
 
-class NSolution
+class NSolution : BaseActionItem
 {
-    [string] $Name
-    [string] $Alias
-    [string] $Path
-    [string] $Id
     [NProject[]] $NProjects
 }
 
-class NProject
-{
-    [string] $Name
-    [string] $Alias
-    [string] $Id   
+class NProject : BaseActionItem
+{   
     [string] $RelativePath
     [NProjectType] $Type
 
@@ -28,7 +23,7 @@ class NProject
 
     [string] GetFullPath()
     {
-       $fullPath = $this.Solution.Path + $this.RelativePath + $this.Name
+       $fullPath = $this.Path
        return $fullPath
     }
 

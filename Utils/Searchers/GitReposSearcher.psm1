@@ -2,10 +2,10 @@ using namespace System.Collections.Generic
 using namespace System.IO
 
 using module ..\Helpers\XMLHelper.psm1
-using module ..\Helpers\EntityHelper.psm1
+using module ..\Helpers\ActionItemHelper.psm1
 using module ..\..\Logger.psm1
 using module ..\..\Models\GitRepo.psm1
-using module ..\..\Models\EntityType.psm1
+using module ..\..\Models\ActionItemType.psm1
 
 class GitReposSearcher
 {
@@ -38,7 +38,7 @@ class GitReposSearcher
             $gitRepo.Url = $gitRepoUrl
             $gitRepo.Name = $this.ExtractGitName($gitRepoUrl)
 
-            $gitRepo.Id = [EntityHelper]::GenerateId([EntityType]::Git, $gitRepo.Name, $gitRepo.Path)
+            $gitRepo.Id = [ActionItemHelper]::GenerateId([ActionItemType]::Git, $gitRepo.Name, $gitRepo.Path)
             $gitRepos.Add($gitRepo)
         }
         $this.Logger.LogInfo("Git-repositories found: $($gitRepos.Count)") 

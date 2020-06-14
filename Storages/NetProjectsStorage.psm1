@@ -1,5 +1,6 @@
 using namespace System.Collections.Generic
 
+using module .\ActionItemsStorage.psm1
 using module ..\Models\NetModels.psm1
 using module ..\Utils\Helpers\XmlHelper.psm1
 using module ..\Logger.psm1
@@ -10,10 +11,12 @@ class NetProjectsStorage
     [NSolution[]] $Solutions
     [NProject[]] $PrimaryProjects
     [Logger] $Logger
+    [ActionItemsStorage] $ActionItemsStorage
 
-    NetProjectsStorage([string]$cfgPath, [Logger] $logger)
+    NetProjectsStorage([string]$cfgPath, [ActionItemsStorage] $actionItemsStorage, [Logger] $logger)
     {
         $this.ConfigFullPath = $cfgPath
+        $this.ActionItemsStorage = $actionItemsStorage
         $this.Logger = $logger
         $this.Reload()
     }

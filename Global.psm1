@@ -7,7 +7,7 @@ class Global
     
     #storage pathes
     static [string] $CommandsPath = "\_StorageFiles\Commands.xml"
-    static [string] $EntitiesPath = "\_StorageFiles\Entities.xml"
+    static [string] $ActionItemsPath = "\_StorageFiles\ActionItems.xml"
     static [string] $GitReposPath = "\_StorageFiles\GitRepos.xml"
     static [string] $NetProjectsPath = "\_StorageFiles\NetProjects.xml"
 

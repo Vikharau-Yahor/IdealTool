@@ -1,5 +1,6 @@
 using namespace System.Collections.Generic
 
+using module .\ActionItemsStorage.psm1
 using module ..\Models\GitRepo.psm1
 using module ..\Utils\Helpers\XmlHelper.psm1
 using module ..\Logger.psm1
@@ -9,10 +10,12 @@ class GitReposStorage
     [string] $ConfigFullPath
     [GitRepo[]] $GitRepos
     [Logger] $Logger
+    [ActionItemsStorage] $ActionItemsStorage
 
-    GitReposStorage([string]$cfgPath, [Logger] $logger)
+    GitReposStorage([string]$cfgPath, [ActionItemsStorage] $actionItemsStorage, [Logger] $logger)
     {
         $this.ConfigFullPath = $cfgPath
+        $this.ActionItemsStorage = $actionItemsStorage
         $this.Logger = $logger
         $this.Reload()
     }
