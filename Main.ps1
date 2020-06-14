@@ -22,10 +22,10 @@ class Main
         $this.ComHandlersFactory = [CommandHanldersFactory]::new($this.StorageProvider, $this.Logger)   
     }
 
-
     Start()
     {
         $userInput = ""
+        
         $quitComAlias = $this.StorageProvider.GetCommandsStorage().GetAlias([CommandsEnum]::Quit)
        
         while($userInput -ne $quitComAlias)

@@ -6,7 +6,6 @@ using module ..\Logger.psm1
 
 class GitReposStorage
 { 
-    
     [string] $ConfigFullPath
     [GitRepo[]] $GitRepos
     [Logger] $Logger

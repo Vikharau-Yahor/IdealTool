@@ -22,7 +22,7 @@ class NProject
     [string] $Id   
     [string] $RelativePath
     [NProjectType] $Type
-    [Bool] $IsPrimary
+
     [XmlIgnore()]
     [NSolution] $Solution
 
@@ -37,7 +37,8 @@ class NProject
 enum NProjectType
 {
     Dll = 0 # if not in list below 
-    Exe = 1 # <Project>.<PropertyGroup>[0].<OutputType>Exe</OutputType> (or WinExe)
-    WebApp = 2 # <Project>.<PropertyGroup>[0].<ProjectTypeGuids> is in web type guids (see https://www.codeproject.com/Reference/720512/List-of-Visual-Studio-Project-Type-GUIDs)
-    WinService = 3 # <Project>.<PropertyGroup>.<StartAction>Program</StartAction>
+    ExeOrWinService = 1 # <Project>.<PropertyGroup>[0].<OutputType>Exe</OutputType> (or WinExe)
+    AspNet = 2 # <Project>.<PropertyGroup>[0].<ProjectTypeGuids> is in web type guids (see https://www.codeproject.com/Reference/720512/List-of-Visual-Studio-Project-Type-GUIDs)
+    WinService = 3 # possible not used because it's considered as Exe
+    Test = 4 # check project name
 }

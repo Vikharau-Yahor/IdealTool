@@ -24,7 +24,7 @@ class GitReposSearcher
 
     [GitRepo[]] SearchGitRepos([string] $searchPath)
     {
-
+        $this.Logger.LogInfo("Start Git-repositories search") 
         $foundItems = Get-ChildItem -Path $searchPath $this.gitConfigFolder -Recurse -Directory -Hidden -ErrorAction Continue
         $gitReposFolders = $foundItems | Where-Object { $this.IsNotInIgnoreList($_.FullName) }      
         [List[GitRepo]] $gitRepos = @()

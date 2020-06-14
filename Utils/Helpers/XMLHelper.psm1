@@ -115,7 +115,7 @@ class XmlHelper
     {
         $isObjArray = $objType.BaseType -eq [Array]
         $isObjCommonType = $objType.FullName.StartsWith('System')
-        $isObjEnum= $objType.BaseType -eq [Enum]
+        $isObjEnum = $objType.BaseType -eq [Enum]
 
         if($isObjCommonType -and -not $isObjArray)
         {           

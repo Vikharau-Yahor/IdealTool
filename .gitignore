@@ -332,3 +332,5 @@ ASALocalRun/
 # Custom
 
 _StorageFiles/
+_Scripts/Managed/
+_Scripts/UnManaged/

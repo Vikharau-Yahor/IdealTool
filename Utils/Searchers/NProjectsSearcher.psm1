@@ -7,20 +7,24 @@ using module ..\Helpers\EntityHelper.psm1
 using module ..\..\Logger.psm1
 using module ..\..\Models\NetModels.psm1
 using module ..\..\Models\EntityType.psm1
+using module ..\DotNet\NProjectTypeExtractor.psm1
 
 class NProjectsSearcher
 {
     hidden [string] $slnMask = '*.sln'
     hidden [string] $projExt = '.csproj'
     hidden [Logger] $logger
+    hidden [NProjectTypeExtractor] $NProjectTypeExtractor
 
     NProjectsSearcher([Logger] $logger)
     {
         $this.logger = $logger
+        $this.NProjectTypeExtractor = [NProjectTypeExtractor]::new()
     }
     
     [NSolution[]] SearchSolutions([string] $searchPath)
     {
+        $this.Logger.LogInfo("Start Net solutions and projects search") 
         $foundSolutionPathes = Get-ChildItem -Path $searchPath $this.slnMask -Recurse
              
         [List[NSolution]] $solutions = @()
@@ -41,10 +45,17 @@ class NProjectsSearcher
             $slnProjectsPathes = (dotnet sln $solutionFullPath list) | Select-Object -Skip 2 | Where-Object {$_.EndsWith($projExt)}
             $slnProjectsPathes | ForEach-Object {
                 [NProject] $project = [NProject]::new()
-                $project.Name = $_ | Split-Path -Leaf
-                $project.RelativePath = $_ | Split-Path
-                $project.Id = [EntityHelper]::GenerateId([EntityType]::NProj, $project.Name, "$($solution.Path)\$($project.RelativePath)")
-                $projects.Add($project)
+                [string] $relativeProjectPath = $_
+                [string] $projectFullPath = "$($solution.Path)\$($relativeProjectPath)"
+                if(Test-Path $projectFullPath)
+                {
+                    $project.Name = $relativeProjectPath | Split-Path -Leaf
+                    $project.RelativePath = $relativeProjectPath | Split-Path
+                    $project.Type = $this.NProjectTypeExtractor.ExtractType("$($solution.Path)\$($relativeProjectPath)")
+                    #$project.IsPrimary = $project.Type -ne [NProjectType]::Dll
+                    $project.Id = [EntityHelper]::GenerateId([EntityType]::NProj, $project.Name, "$($solution.Path)\$($project.RelativePath)")
+                    $projects.Add($project)
+                }
             }
 
             $solution.NProjects = $projects.ToArray()

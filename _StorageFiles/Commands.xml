@@ -6,5 +6,6 @@
     <Command Id="3" Alias="urun" />
     <Command Id="4" Alias="openvs" />
     <Command Id="5" Alias="openr" />
+    <Command Id="6" Alias="setalias" />
   </Commands>
 </CommandsRoot>
