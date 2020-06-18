@@ -14,7 +14,7 @@ class CommandHandlerBase
         $this.CommandParams = $commandParams
     }
 
-    [void]Handle()
+    [void] Handle()
     { 
         throw "Handle() must be implemented in inherited class"
     }

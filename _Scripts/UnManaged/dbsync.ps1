@@ -1,1 +1,1 @@
-C:\work\Monolith.Sql\sql\dbsync\dbsync.ps1
+C:\work\MonolithSQL\sql\dbsync\dbsync.ps1

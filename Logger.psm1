@@ -7,6 +7,11 @@ class Logger
         Write-Host "[Info $($this.GetCurrentTime())]: $message"
     }
 
+    LogSimpleText($message)
+    {
+        Write-Host "$message"
+    }
+
     LogError([string] $errorText)
     {
         $ErrorActionPreference = 'Continue'

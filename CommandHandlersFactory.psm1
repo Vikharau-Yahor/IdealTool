@@ -5,6 +5,7 @@ using module .\Logger.psm1
 using module .\CommandHandlers\_CommandHandlerBase.psm1
 using module .\CommandHandlers\URunHandler.psm1
 using module .\CommandHandlers\ScanHandler.psm1
+using module .\CommandHandlers\SetAliasHandler.psm1
 
 class CommandHanldersFactory
 {
@@ -25,6 +26,7 @@ class CommandHanldersFactory
         {
             ([CommandsEnum]::UnmanagedRun) { $handler = [URunHandler]::new($this.StorageProvider, $this.Logger, $commandParams) } 
             ([CommandsEnum]::Scan) { $handler = [ScanHandler]::new($this.StorageProvider, $this.Logger, $commandParams) } 
+            ([CommandsEnum]::SetAlias) { $handler = [SetAliasHandler]::new($this.StorageProvider, $this.Logger) } 
             default { return $null }
         }
 

@@ -52,7 +52,7 @@ class CachedActionItemsStorage
         $cachedActionItemsContainer.CachedActionItems = $this.CachedActionItems.Values
 
         [XmlHelper]::Serialize($cachedActionItemsContainer, $this.ConfigFullPath)
-        $this.Logger.LogInfo("New cached action items have been saved to file: $($this.ConfigFullPath)")
+        #$this.Logger.LogInfo("New cached action items have been saved to file: $($this.ConfigFullPath)")
     }
 
     [BaseActionItem] Restore([BaseActionItem] $baseActionItem, [ActionItemType] $actionItemType)

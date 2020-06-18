@@ -19,4 +19,7 @@ class Global
     #scripts relative folders
     static [string] $ManagedScriptsPath = "\_Scripts\Managed"
     static [string] $UnManagedScriptsPath = "\_Scripts\UnManaged"
+
+    #utils
+    static [string] $CommandBreakString = "#break"
 }

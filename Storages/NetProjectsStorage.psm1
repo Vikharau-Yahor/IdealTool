@@ -1,5 +1,6 @@
 using namespace System.Collections.Generic
 
+using module .\_AbstractActionItemsStorage.psm1
 using module .\ActionItemsStorage.psm1
 using module .\CachedActionItemsStorage.psm1
 using module ..\Models\ActionItemType.psm1
@@ -8,22 +9,18 @@ using module ..\Utils\Helpers\XmlHelper.psm1
 using module ..\Utils\Helpers\CommonHelper.psm1
 using module ..\Logger.psm1
 
-class NetProjectsStorage
+class NetProjectsStorage : AbstractActionItemsStorage
 {
-    [string] $ConfigFullPath
     [NSolution[]] $Solutions
     [NProject[]] $PrimaryProjects
     
-    [Logger] $Logger
     [ActionItemsStorage] $ActionItemsStorage
     [CachedActionItemsStorage] $CachedActionItemsStorage
 
-    NetProjectsStorage([string]$cfgPath, [ActionItemsStorage] $actionItemsStorage, [CachedActionItemsStorage] $cachedActionItemsStorage, [Logger] $logger)
+    NetProjectsStorage([string]$cfgPath, [ActionItemsStorage] $actionItemsStorage, [CachedActionItemsStorage] $cachedActionItemsStorage, [Logger] $logger) : base($cfgPath, $logger)
     {
-        $this.ConfigFullPath = $cfgPath
         $this.ActionItemsStorage = $actionItemsStorage
         $this.CachedActionItemsStorage = $cachedActionItemsStorage
-        $this.Logger = $logger
         $this.Reload()
     }
 

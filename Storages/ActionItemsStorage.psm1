@@ -1,6 +1,7 @@
 using namespace System.Linq
 using namespace System.Collections.Generic
 
+using module .\_AbstractActionItemsStorage.psm1
 using module ..\Models\_BaseActionItem.psm1
 using module ..\Models\ActionItem.psm1
 using module ..\Models\ActionItemType.psm1
@@ -8,16 +9,12 @@ using module ..\Utils\Helpers\XmlHelper.psm1
 using module ..\Utils\Helpers\CommonHelper.psm1
 using module ..\Logger.psm1
 
-class ActionItemsStorage
+class ActionItemsStorage : AbstractActionItemsStorage
 { 
-    [string] $ConfigFullPath
     [List[ActionItem]] $ActionItems
-    [Logger] $Logger
 
-    ActionItemsStorage([string]$cfgPath, [Logger] $logger)
+    ActionItemsStorage([string]$cfgPath, [Logger] $logger) : base($cfgPath, $logger)
     {
-        $this.ConfigFullPath = $cfgPath
-        $this.Logger = $logger
         $this.Reload()
     }
 
@@ -98,7 +95,20 @@ class ActionItemsStorage
 
     [ActionItem[]] GetNonAliasedActionItems()
     {
-        [ActionItem[]] $result = $this.ActionItems | Where-Object { [string]::IsNullOrEmpty($_.Alias) }
+        [ActionItem[]] $result = @()
+        
+        if($this.ActionItems -eq $null -or $this.ActionItems.Count -eq 0)
+        { return $result }
+
+        [ActionItem[]] $result = $this.ActionItems | Where-Object { ([string]::IsNullOrEmpty($_.Alias) -and $_.IsActive) } | Sort-Object -Property AIType, Name
+        return $result
+    }
+
+    [ActionItem] GetByAlias([string] $alias, [ActionItemType] $itemType)
+    {
+        [ActionItem] $result = $null
+
+        $result = $this.ActionItems | Where-Object { ($_.Alias -eq $alias -and $_.IsActive) } | Select-Object -First 1
         return $result
     }
 
