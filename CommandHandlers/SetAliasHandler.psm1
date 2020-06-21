@@ -25,7 +25,7 @@ class SetAliasHandler : CommandHandlerBase
         [ActionItemsStorage] $actionItemsStorage = $this.StorageProvider.GetActionItemsStorage()
         [ActionItem[]] $unaliasedActionItems = $actionItemsStorage.GetNonAliasedActionItems()
         [List[ActionItem]] $updatedActionItems = [List[ActionItem]]::new()
-        
+
         if($unaliasedActionItems.Count -eq 0)
         {
             $this.Logger.LogInfo("There are no items for setting alias") 
@@ -55,30 +55,18 @@ class SetAliasHandler : CommandHandlerBase
             if([string]::IsNullOrEmpty($userInput))
             {  
                 $unaliasedItem.IsActive = $false
-                $updatedActionItems.Add($unaliasedItem)
             }
             else {
                 $unaliasedItem.Alias = $userInput
             }
-
             $updatedActionItems.Add($unaliasedItem)
         }
 
-        [Dictionary[ActionItemType, AbstractActionItemsStorage]] $storagesDictionary = $this.storageProvider.GetItemsStoragesDictionary()
-        foreach($storageItem in $storagesDictionary)
-        {
-            [AbstractActionItemsStorage] $storage = $storageItem.Value
-            $itemsToSave = $updatedActionItems | Where-Object{ $_.AIType -eq $storageItem.Key}
-            
-            if($itemsToSave -eq $null -or $itemsToSave.Count -eq 0)
-            { continue }
-            
-            $storage.Update($itemsToSave)
-        }
+        $actionItemsStorage.Save()
 
-        $actionItemsStorage.Update($updatedActionItems)
         #refresh cache
-
+        $cacheStorage = $this.StorageProvider.GetCachedActionItemsStorage()
+        $cacheStorage.Update($updatedActionItems.ToArray())
     }
 
     hidden [bool] ValidateUserInput([string] $userString, [ActionItemType] $itemType)

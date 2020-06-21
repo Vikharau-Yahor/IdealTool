@@ -21,9 +21,4 @@ class AbstractActionItemsStorage
     {
         throw "Reload() must be implemented in inherited class"
     }
-
-    Update([ActionItem[]] $actionItems)
-    {
-        throw "Update() must be implemented in inherited class"
-    }
 }

@@ -52,19 +52,44 @@ class CachedActionItemsStorage
         $cachedActionItemsContainer.CachedActionItems = $this.CachedActionItems.Values
 
         [XmlHelper]::Serialize($cachedActionItemsContainer, $this.ConfigFullPath)
-        #$this.Logger.LogInfo("New cached action items have been saved to file: $($this.ConfigFullPath)")
     }
 
-    [BaseActionItem] Restore([BaseActionItem] $baseActionItem, [ActionItemType] $actionItemType)
+    [ActionItem] Restore([ActionItem] $actionItem)
     {
-        if($baseActionItem -eq $null -or -not $this.CachedActionItems.ContainsKey($baseActionItem.Id))
-        { return $baseActionItem }
+        if($actionItem -eq $null -or -not $this.CachedActionItems.ContainsKey($actionItem.Id))
+        { return $actionItem }
 
-        [CachedActionItem] $cachedItem = $this.CachedActionItems[$baseActionItem.Id]
+        [CachedActionItem] $cachedItem = $this.CachedActionItems[$actionItem.Id]
 
-        $baseActionItem.Alias = $cachedItem.CachedAlias
-        $baseActionItem.IsActive = $cachedItem.CachedIsActive
-        return $baseActionItem
+        $actionItem.Alias = $cachedItem.CachedAlias
+        $actionItem.IsActive = $cachedItem.CachedIsActive
+        return $actionItem
+    }
+
+    Update([ActionItem[]] $actionItems)
+    {
+        if($actionItems -eq $null -or $actionItems.Count -eq 0)
+        { return }
+
+        foreach($actionItem in $actionItems) {
+            if($this.CachedActionItems.ContainsKey($actionItem.Id))
+            {
+                [CachedActionItem] $cachedItem = $this.CachedActionItems[$actionItem.Id]
+                $cachedItem.CachedAlias = $actionItem.Alias
+                $cachedItem.CachedIsActive = $actionItem.IsActive
+            }
+            else {
+                [CachedActionItem] $newCachedItem = [CachedActionItem]::new() 
+                $newCachedItem.Id = $actionItem.Id
+                $newCachedItem.AIType = $actionItem.AIType
+                $newCachedItem.Name = $actionItem.Name
+                $newCachedItem.CachedAlias = $actionItem.Alias
+                $newCachedItem.CachedIsActive = $actionItem.IsActive
+                $this.CachedActionItems.Add($newCachedItem.Id, $newCachedItem)
+            }
+        }
+
+        $this.Save()
     }
 
 }

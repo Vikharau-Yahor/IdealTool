@@ -3,6 +3,7 @@ using namespace System.Collections.Generic
 using module .\_AbstractActionItemsStorage.psm1
 using module .\ActionItemsStorage.psm1
 using module .\CachedActionItemsStorage.psm1
+using module ..\Models\ActionItem.psm1
 using module ..\Models\ActionItemType.psm1
 using module ..\Models\GitRepo.psm1
 using module ..\Utils\Helpers\XmlHelper.psm1
@@ -11,7 +12,7 @@ using module ..\Logger.psm1
 
 class GitReposStorage : AbstractActionItemsStorage
 { 
-    [GitRepo[]] $GitRepos
+    hidden [Dictionary[string, GitRepo]] $GitRepos
     [ActionItemsStorage] $ActionItemsStorage
     [CachedActionItemsStorage] $CachedActionItemsStorage
 
@@ -24,7 +25,7 @@ class GitReposStorage : AbstractActionItemsStorage
 
     Reload()
     {
-        $this.GitRepos = @()
+        $this.GitRepos = [Dictionary[string, GitRepo]]::new()
 
         if(-not (Test-Path -Path $this.ConfigFullPath))
         { return }
@@ -36,7 +37,12 @@ class GitReposStorage : AbstractActionItemsStorage
             if( $gitReposContainer -eq $null -or $gitReposContainer.GitRepositories -eq $null)
             { return }
 
-            $this.GitRepos = $gitReposContainer.GitRepositories
+            foreach($gitRepo in $gitReposContainer.GitRepositories)
+            {
+                $relatedActionItem = $this.ActionItemsStorage.GetById($gitRepo.Id)
+                $gitRepo.SetInitialBasicData($relatedActionItem)
+                $this.GitRepos.Add($gitRepo.Id, $gitRepo)
+            }
         }
         catch [System.Exception]
         {
@@ -51,18 +57,27 @@ class GitReposStorage : AbstractActionItemsStorage
             $this.Logger.LogInfo("GitStorage saves nothing because input gitRepos array is empty")
             return 
         }
-        
+
+        [List[ActionItem]] $newActionItems = @()
         foreach($gitRepo in $gitRepos)
         {
-            $this.CachedActionItemsStorage.Restore($gitRepo, [ActionItemType]::Git)
+            if($this.GitRepos.ContainsKey($gitRepo.Id))
+            {
+                $this.Logger.LogError("GitReposStorage.Add(GitRepo[]): git repo with id '$($gitRepo.Id)' already exists in storage")
+                continue   
+            }
+            $baseData = $gitRepo.GetBaseData()
+            $this.CachedActionItemsStorage.Restore($baseData)
+            
+            $this.GitRepos.Add($gitRepo.Id, $gitRepo)
+            $newActionItems.Add($gitRepo.GetBaseData())
         }
-
-        $this.GitRepos = $gitRepos
+        
         $this.Save()
         $this.Logger.LogInfo("New git repositories ($($this.GitRepos.Count)) have been successfully saved to file: $($this.ConfigFullPath)")
 
         #save actionItems
-        $this.ActionItemsStorage.Add($this.GitRepos, [ActionItemType]::Git)
+        $this.ActionItemsStorage.Add($newActionItems)
     }
 
     Delete([string] $folderPath)
@@ -73,20 +88,25 @@ class GitReposStorage : AbstractActionItemsStorage
         $folderPath = $folderPath.ToLower()
         $oldReposCount = $this.GitRepos.Count
        
-        $this.GitRepos = $this.GitRepos | Where-Object { (-not $_.Path.ToLower().StartsWith($folderPath)) }
-        $this.GitRepos = [CH]::Ternary(($this.GitRepos -eq $null), @(), $this.GitRepos) 
+        $gitReposToDelete = $this.GitRepos.Values | Where-Object { $_.GetBaseData().Path.ToLower().StartsWith($folderPath) }
+        $gitReposToDelete = [CH]::Ternary(($gitReposToDelete -eq $null), @(), $gitReposToDelete)   
+        
+        foreach($gitRepo in $gitReposToDelete) 
+        { $this.GitRepos.Remove($gitRepo.Id) }
+        
         $this.Save()
 
-        $deletedReposCount = $oldReposCount - $this.GitRepos.Count
+        $deletedReposCount = $gitReposToDelete.Count
         $this.Logger.LogInfo("Old Git repositories ($($deletedReposCount)) matched by path: '$($folderPath)' have been deleted")
 
+        #delete actionItems
         $this.ActionItemsStorage.Delete($folderPath, @([ActionItemType]::Git))
     }
 
     Save()
     {
         [GitReposContainer] $gitReposContainer = [GitReposContainer]::new()
-        $gitReposContainer.GitRepositories = $this.GitRepos
+        $gitReposContainer.GitRepositories = $this.GitRepos.Values
 
         [XmlHelper]::Serialize($gitReposContainer, $this.ConfigFullPath)
     }

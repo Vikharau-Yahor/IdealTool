@@ -11,7 +11,7 @@ using module ..\Logger.psm1
 
 class ActionItemsStorage : AbstractActionItemsStorage
 { 
-    [List[ActionItem]] $ActionItems
+    hidden [Dictionary[string, ActionItem]] $ActionItems
 
     ActionItemsStorage([string]$cfgPath, [Logger] $logger) : base($cfgPath, $logger)
     {
@@ -20,7 +20,7 @@ class ActionItemsStorage : AbstractActionItemsStorage
 
     Reload()
     {
-        $this.ActionItems = @()
+        $this.ActionItems = [Dictionary[string, ActionItem]]::new()
 
         if(-not (Test-Path -Path $this.ConfigFullPath))
         { return }
@@ -32,7 +32,14 @@ class ActionItemsStorage : AbstractActionItemsStorage
             if( $null -eq $actionItemsContainer -or $null -eq $actionItemsContainer.ActionItems)
             { return }
 
-            $this.ActionItems.AddRange($actionItemsContainer.ActionItems)
+            foreach($deserealiasedItem in $actionItemsContainer.ActionItems) {
+                if($this.ActionItems.ContainsKey($deserealiasedItem.Id))
+                {
+                    $this.Logger.LogError("Action Items Reload(): Action Item with Id: $($deserealiasedItem.Id) already exists in storage dictionary")
+                    continue   
+                }
+                $this.ActionItems.Add($deserealiasedItem.Id, $deserealiasedItem)   
+            }
         }
         catch [System.Exception]
         {
@@ -43,54 +50,30 @@ class ActionItemsStorage : AbstractActionItemsStorage
     Save()
     {
         [ActionItemsContainer] $actionItemsContainer = [ActionItemsContainer]::new()
-        $actionItemsContainer.ActionItems = $this.ActionItems.ToArray()
+        $actionItemsContainer.ActionItems = $this.ActionItems.Values
 
         [XmlHelper]::Serialize($actionItemsContainer, $this.ConfigFullPath)
     }
-
-    Add([BaseActionItem] $baseActionItem, [ActionItemType] $actionItemType )
-    {
-        if($baseActionItem -eq $null)
-        { return; }
-
-        $this.Add(@($baseActionItem), $actionItemType)
-    }
     
-    Add([BaseActionItem[]] $baseActionItems, [ActionItemType] $actionItemType )
-    {
-        [List[ActionItem]] $newActionItems = @()
-
-        $baseActionItems | ForEach-Object {
-            $newActionItems.Add([ActionItem]::new($_, $actionItemType))
-        }
-
-        $this.Add($newActionItems)
-    }
-
     Add([ActionItem[]] $actionItems)
     {  
         if($null -eq $actionItems -or $actionItems.Length -eq 0)
         {  return; }
 
-        [List[string]] $currentActionItemsKeys = @() 
-        $this.ActionItems | ForEach-Object { $currentActionItemsKeys.Add($_.Id) }
-        
-        if($currentActionItemsKeys -eq $null)
-        { return; }
+        foreach($newActionItem in $actionItems)
+        {
+            if($this.ActionItems.ContainsKey($newActionItem.Id))
+            {
+                $this.Logger.LogError("Action Items Add(ActionItem[]]): Action Item with Id '$($newActionItem.Id)' already exists in storage dictionary")
+                continue   
+            }
+            $this.ActionItems.Add($newActionItem.Id,$newActionItem)
+        }
 
-        [List[ActionItem]] $newActionItems = @()
-        $newActionItems = $actionItems | Where-Object { -not $currentActionItemsKeys.Contains($_.Id) }
-        
-        if($newActionItems.Count -eq 0)
-        { return; }
-
-        $this.ActionItems.AddRange($newActionItems)
-        $this.ActionItems = $this.ActionItems | Sort-Object -Property Name
+        $this.ActionItems = $this.ActionItems | Sort-Object -Property Key
         $this.Save()
 
-        $firstActionItem = $actionItems | Select-Object -First 1
-        $actionTypeString = $firstActionItem.AIType.ToString()
-        $this.Logger.LogInfo("New action items ($($newActionItems.Count)) with type $actionTypeString have been added to file: $($this.ConfigFullPath)")
+        $this.Logger.LogInfo("New action items ($($actionItems.Count)) have been added to file: $($this.ConfigFullPath)")
     }
 
     [ActionItem[]] GetNonAliasedActionItems()
@@ -100,7 +83,7 @@ class ActionItemsStorage : AbstractActionItemsStorage
         if($this.ActionItems -eq $null -or $this.ActionItems.Count -eq 0)
         { return $result }
 
-        [ActionItem[]] $result = $this.ActionItems | Where-Object { ([string]::IsNullOrEmpty($_.Alias) -and $_.IsActive) } | Sort-Object -Property AIType, Name
+        [ActionItem[]] $result = $this.ActionItems.Values | Where-Object { ([string]::IsNullOrEmpty($_.Alias) -and $_.IsActive) } | Sort-Object -Property AIType, Name
         return $result
     }
 
@@ -108,7 +91,20 @@ class ActionItemsStorage : AbstractActionItemsStorage
     {
         [ActionItem] $result = $null
 
-        $result = $this.ActionItems | Where-Object { ($_.Alias -eq $alias -and $_.IsActive) } | Select-Object -First 1
+        $result = $this.ActionItems.Values | Where-Object { ($_.Alias -eq $alias -and $_.IsActive) } | Select-Object -First 1
+        return $result
+    }
+
+    
+    [ActionItem] GetById([string] $id)
+    {
+        [ActionItem] $result = $null
+        if(-not ($this.ActionItems.ContainsKey($id)))
+        {
+            $this.Logger.LogError("ActionItemsStorage.GetById(string): Action Item with Id '$($id)' doesn't exists in the storage")
+            return $result   
+        }
+        $result = $this.ActionItems[$id]
         return $result
     }
 
@@ -119,11 +115,19 @@ class ActionItemsStorage : AbstractActionItemsStorage
         
         $folderPath = $folderPath.ToLower()
         $oldActionItemsCount = $this.ActionItems.Count
-        $this.ActionItems = $this.ActionItems | Where-Object { (-not ($_.Path.ToLower().StartsWith($folderPath) -and $actionItemTypes.Contains($_.AIType))) }
-        $this.ActionItems = [CH]::Ternary(($this.ActionItems -eq $null), @(), $this.ActionItems) 
+        $itemsToDelete = $this.ActionItems.Values | Where-Object { ($_.Path.ToLower().StartsWith($folderPath) -and $actionItemTypes.Contains($_.AIType)) }
+        
+        if($itemsToDelete -eq $null)
+        { return; }
+
+        foreach($itemToDelete in $itemsToDelete)
+        {
+            $this.ActionItems.Remove($itemToDelete.Id)
+        }
+
+        $this.ActionItems = [CH]::Ternary(($this.ActionItems -eq $null), [ActionItemsContainer]::new(), $this.ActionItems) 
         $this.Save()
 
-        $deletedActionItemsCount =  $oldActionItemsCount - $this.ActionItems.Count
-        $this.Logger.LogInfo("Old action items ($($deletedActionItemsCount)) matched by path: '$($folderPath)' have been deleted")
+        $this.Logger.LogInfo("Old action items ($($itemsToDelete.Count)) matched by path: '$($folderPath)' have been deleted")
     }
 }

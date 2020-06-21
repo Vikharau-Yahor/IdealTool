@@ -4,7 +4,9 @@ using namespace Microsoft.Build.Construction
 
 using module ..\Helpers\XMLHelper.psm1
 using module ..\Helpers\ActionItemHelper.psm1
+using module ..\Helpers\CommonHelper.psm1
 using module ..\..\Logger.psm1
+using module ..\..\Models\ActionItem.psm1
 using module ..\..\Models\NetModels.psm1
 using module ..\..\Models\ActionItemType.psm1
 using module ..\DotNet\NProjectTypeExtractor.psm1
@@ -22,48 +24,86 @@ class NProjectsSearcher
         $this.NProjectTypeExtractor = [NProjectTypeExtractor]::new()
     }
     
-    [NSolution[]] SearchSolutions([string] $searchPath)
+    [DotNetItemsContainer] SearchDotNetItems([string] $searchPath)
     {
         $this.Logger.LogInfo("Start Net solutions and projects search") 
         $foundSolutionPathes = Get-ChildItem -Path $searchPath $this.slnMask -Recurse
              
         [List[NSolution]] $solutions = @()
+        [Dictionary[string, NProject]] $projectsByPath = [Dictionary[string, NProject]]::new()
 
         $foundSolutionPathes | ForEach-Object {
             $solutionPath = $_
-            [NSolution] $solution = [NSolution]::new()
-            $solution.Name = $_.Name
-            $solution.IsActive = $true
-            $solution.Path = Split-Path $_.FullName
-            $solution.Id = [ActionItemHelper]::GenerateId([ActionItemType]::NSolution, $solution.Name, $solution.Path)
-            $solutions.Add($solution)
+           
+            #setup base data
+            $path = Split-Path $solutionPath.FullName
+            $baseInfo = [ActionItem]::new($solutionPath.Name, $path, $true, [ActionItemType]::NSolution)
+
+            [NSolution] $newSolution = [NSolution]::new()
+            $newSolution.SetInitialBasicData($baseInfo)
+            $newSolution.ProjectsIds = @()
+            $solutions.Add($newSolution)
         }
 
-        $solutions | ForEach-Object {
-            [NSolution] $solution = $_
-            [List[NProject]] $projects = @()
-            $solutionFullPath = "$($solution.Path)\$($solution.Name)"
+        foreach($solution in $solutions) {
+            [List[string]] $projectsIdsList = [List[string]]::new()
+            $solutionBaseData = $solution.GetBaseData()
+            $solutionFullPath = "$($solutionBaseData.Path)\$($solutionBaseData.Name)"
             $slnProjectsPathes = (dotnet sln $solutionFullPath list) | Select-Object -Skip 2 | Where-Object {$_.EndsWith($projExt)}
-            $slnProjectsPathes | ForEach-Object {
-                [NProject] $project = [NProject]::new()
-                [string] $relativeProjectPath = $_
-                [string] $projectFullPath = "$($solution.Path)\$($relativeProjectPath)"
-                if(Test-Path $projectFullPath)
-                {
-                    $project.Name = $relativeProjectPath | Split-Path -Leaf
-                    $project.Path = $projectFullPath
-                    $project.IsActive = $project.IsPrimary()
-                    $project.RelativePath = $relativeProjectPath | Split-Path
-                    $project.Type = $this.NProjectTypeExtractor.ExtractType("$($solution.Path)\$($relativeProjectPath)")
-                    $project.Id = [ActionItemHelper]::GenerateId([ActionItemType]::NProj, $project.Name, "$($solution.Path)\$($project.RelativePath)")
-                    $projects.Add($project)
-                }
+            
+            if($slnProjectsPathes -eq $null -or  $slnProjectsPathes.Count -eq 0)
+            {
+                $solution.GetBaseData().IsActive = $false
+                continue
             }
+            
+            foreach ($relativeProjectPath in $slnProjectsPathes) {
+                $slnPath = $solutionBaseData.Path
+                [string] $projectFullPath = "$($slnPath)\$($relativeProjectPath)"
+                
+                [NProject] $project = [NProject]::new()
+                if(-not (Test-Path $projectFullPath))
+                { continue }
+                
+                if($projectsByPath.ContainsKey($projectFullPath))
+                {
+                    $project = $projectsByPath[$projectFullPath]
+                }
+                else {        
+                    #setup base data
+                    $name = $relativeProjectPath | Split-Path -Leaf       
+                    $baseInfo = [ActionItem]::new($name, $projectFullPath, $false, [ActionItemType]::NProj)  
+                    $project.SetInitialBasicData($baseInfo)
 
-            $solution.NProjects = $projects.ToArray()
+                    #additional data
+                    $project.Type = $this.NProjectTypeExtractor.ExtractType($projectFullPath)
+                    $project.GetBaseData().IsActive = $project.IsPrimary()
+                    $project.SolutionsIds = @()
+                    $projectsByPath.Add($projectFullPath, $project)
+                }
+                $projectsIdsList.Add($project.Id)
+            }
+            $solution.ProjectsIds = $projectsIdsList.ToArray()
+        }
+        foreach($project in $projectsByPath.Values)
+        {
+            $relatedSolutions = $solutions | Where-Object { $_.ProjectsIds.Contains($project.Id) }
+            $relatedSolutions = [CH]::Ternary($relatedSolutions -eq $null, @(), $relatedSolutions)
+            
+            $project.SolutionsIds = [string[]]::new($relatedSolutions.Count)
+            $index = 0
+            foreach($solution in $relatedSolutions)
+            {
+                $project.SolutionsIds[$index] = $solution.Id
+                $index += 1
+            }
         }
 
-        $this.Logger.LogInfo("Net Solutions found: $($solutions.Count)") 
-        return $solutions.ToArray()  
+        [DotNetItemsContainer] $container = [DotNetItemsContainer]::new()
+        $container.NetProjects = $projectsByPath.Values
+        $container.NetSolutions = $solutions.ToArray()
+        $this.Logger.LogInfo("New .net solutions found: $($container.NetSolutions.Count)") 
+        $this.Logger.LogInfo("New .net projects found: $($container.NetProjects.Count)") 
+        return $container
     }
 }

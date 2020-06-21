@@ -3,25 +3,30 @@ using namespace System.Xml.Serialization
 
 using module .\_BaseActionItem.psm1
 using module .\ActionItemType.psm1
+using module ..\Utils\Helpers\ActionItemHelper.psm1
 
-# Represent all known items which are consumed by commandHandlers (git repos, net solutions and etc)
+# Generic info about all known items (git repos, net solutions and etc)
 class ActionItem : BaseActionItem
 {
+    [string] $Alias
+    [String] $Name
+    [string] $Path
+    #inactive items are ignored in all tool commands
+    [bool] $IsActive
+    [ActionItemType] $AIType
+
     ActionItem()
     {
 
     }
 
-    ActionItem([BaseActionItem] $baseInfo, [ActionItemType] $actionItemType) {
-        $this.Id = $baseInfo.Id
-        $this.IsActive = $baseInfo.IsActive
-        $this.Name = $baseInfo.Name
-        $this.Path = $baseInfo.Path
-        $this.Alias = $baseInfo.Alias
+    ActionItem([string] $name, [string] $path, [bool] $isActive, [ActionItemType] $actionItemType) {
+        $this.Id = [ActionItemHelper]::GenerateId($actionItemType, $name, $path)
+        $this.Name = $name
+        $this.Path = $path
+        $this.IsActive = $isActive
         $this.AIType = $actionItemType
     }
-
-   [ActionItemType] $AIType
 }
 
 

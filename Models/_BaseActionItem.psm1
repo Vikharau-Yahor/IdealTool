@@ -5,10 +5,4 @@ using namespace System.Xml.Serialization
 class BaseActionItem
 {
     [string] $Id 
-    [string] $Alias
-    [String] $Name
-    [string] $Path
-
-    #inactive items are ignored in all tool commands
-    [bool] $IsActive
 }

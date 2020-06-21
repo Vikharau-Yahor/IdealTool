@@ -39,9 +39,11 @@ class StorageProvider
     Reload()
     {
         $this.CommandsStorage.Reload()
+        # actionItemsStorage must be first
+        $this.ActionItemsStorage.Reload()
         $this.GitReposStorage.Reload()
         $this.NetProjectsStorage.Reload()
-        $this.ActionItemsStorage.Reload()
+        $this.CachedActionItemsStorage.Restore()
     }
 
     [CommandsStorage] GetCommandsStorage()
@@ -64,6 +66,12 @@ class StorageProvider
         return $this.ActionItemsStorage
     }
 
+    [CachedActionItemsStorage] GetCachedActionItemsStorage()
+    {
+        return $this.CachedActionItemsStorage
+    }
+
+    #unused??
     [Dictionary[ActionItemType, AbstractActionItemsStorage]] GetItemsStoragesDictionary()
     {
         return $this.ItemsStorages

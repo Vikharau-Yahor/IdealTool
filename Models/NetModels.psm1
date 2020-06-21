@@ -1,30 +1,68 @@
 using namespace System.Xml.Serialization
+using namespace System.Collections.Generic
 
 using module .\_BaseActionItem.psm1
+using module .\ActionItem.psm1
 
 [XmlRoot("NetRoot")]
-Class NetSolutionsContainer
+Class DotNetItemsContainer
 {
     [NSolution[]] $NetSolutions
+    [NProject[]] $NetProjects
 }
 
 class NSolution : BaseActionItem
 {
-    [NProject[]] $NProjects
+    #private
+    [XmlIgnore()]
+    hidden [ActionItem] $BasicData
+
+    #public
+    [string[]] $ProjectsIds
+
+    SetInitialBasicData([ActionItem] $basicData)
+    {
+        if($this.BasicData -eq $null)
+        {
+            $this.BasicData = $basicData
+        }
+        $this.Id = $basicData.Id
+    }
+
+    [ActionItem] GetBaseData()
+    {
+        return $this.BasicData
+    }
 }
 
 class NProject : BaseActionItem
 {   
-    [string] $RelativePath
-    [NProjectType] $Type
-
+    #private
     [XmlIgnore()]
-    [NSolution] $Solution
+    hidden [ActionItem] $BasicData
+    
+    #public
+    [NProjectType] $Type
+    [string[]] $SolutionsIds
 
     [bool] IsPrimary()
     {
         $isPrimary = ($this.Type -ne [NProjectType]::Dll) -and ($this.Type -ne [NProjectType]::Test)
         return $isPrimary
+    }
+
+    SetInitialBasicData([ActionItem] $basicData)
+    {
+        if($this.BasicData -eq $null)
+        {
+            $this.BasicData = $basicData
+        }
+        $this.Id = $basicData.Id
+    }
+
+    [ActionItem] GetBaseData()
+    {
+        return $this.BasicData
     }
 
 }

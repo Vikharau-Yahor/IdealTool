@@ -44,14 +44,14 @@ class ScanHandler : CommandHandlerBase
         # git repos processing
         $gitReposStorage = $this.storageProvider.GetGitReposStorage()
         $gitReposStorage.Delete($folderFullPath)
-        [GitRepo[]] $gitRepos = $this.GitReposSearcher.SearchGitRepos($folderFullPath)    
+        $gitRepos = $this.GitReposSearcher.SearchGitRepos($folderFullPath)    
         $gitReposStorage.Add($gitRepos)
 
         # net solutions/projects processing
         $netProjectsStorage = $this.storageProvider.GetNetProjectsStorage()
-        $netProjectsStorage.DeleteSolutions($folderFullPath)
-        [NSolution[]] $solutions = $this.NProjectsSearcher.SearchSolutions($folderFullPath)  
-        $netProjectsStorage.Add($solutions)
+        $netProjectsStorage.Delete($folderFullPath)
+        [DotNetItemsContainer] $dotNetItemsContainer = $this.NProjectsSearcher.SearchDotNetItems($folderFullPath)  
+        $netProjectsStorage.Add($dotNetItemsContainer)
     }
 
 }

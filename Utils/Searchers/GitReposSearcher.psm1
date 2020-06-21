@@ -4,8 +4,9 @@ using namespace System.IO
 using module ..\Helpers\XMLHelper.psm1
 using module ..\Helpers\ActionItemHelper.psm1
 using module ..\..\Logger.psm1
-using module ..\..\Models\GitRepo.psm1
+using module ..\..\Models\ActionItem.psm1
 using module ..\..\Models\ActionItemType.psm1
+using module ..\..\Models\GitRepo.psm1
 
 class GitReposSearcher
 {
@@ -31,14 +32,15 @@ class GitReposSearcher
 
         $gitReposFolders | ForEach-Object {
             $gitFolder = $_.FullName | Split-Path
-            [GitRepo]$gitRepo = [GitRepo]::new()
-            $gitRepoUrl = $this.GetGitRepoUrl($gitFolder)
 
-            $gitRepo.Path = $gitFolder
+            [GitRepo]$gitRepo = [GitRepo]::new()
+            #setup base data
+            $gitRepoUrl = $this.GetGitRepoUrl($gitFolder)
+            $name = $this.ExtractGitName($gitRepoUrl)
+            $baseInfo = [ActionItem]::new($name, $gitFolder, $true, [ActionItemType]::Git)  
+            $gitRepo.SetInitialBasicData($baseInfo)
+
             $gitRepo.Url = $gitRepoUrl
-            $gitRepo.Name = $this.ExtractGitName($gitRepoUrl)
-            $gitRepo.IsActive = $true
-            $gitRepo.Id = [ActionItemHelper]::GenerateId([ActionItemType]::Git, $gitRepo.Name, $gitRepo.Path)
             $gitRepos.Add($gitRepo)
         }
         $this.Logger.LogInfo("Git-repositories found: $($gitRepos.Count)") 
