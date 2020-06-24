@@ -4,10 +4,10 @@ using module ..\Utils\Helpers\StringHelper.psm1
 using module ..\Storages\_StorageProvider.psm1
 using module ..\Logger.psm1
 
-class URunHandler : CommandHandlerBase
+class URunScriptHandler : CommandHandlerBase
 {
 
-    URunHandler ([StorageProvider]$storageProvider, [Logger] $logger, [string]$commandParams) : base($storageProvider, $logger, $commandParams)
+    URunScriptHandler ([StorageProvider]$storageProvider, [Logger] $logger, [string]$commandParams) : base($storageProvider, $logger, $commandParams)
     {  }
 
     #overridden

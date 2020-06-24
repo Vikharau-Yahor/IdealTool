@@ -36,7 +36,7 @@ class NProjectsSearcher
             $solutionPath = $_
            
             #setup base data
-            $path = Split-Path $solutionPath.FullName
+            $path = $solutionPath.FullName
             $baseInfo = [ActionItem]::new($solutionPath.Name, $path, $true, [ActionItemType]::NSolution)
 
             [NSolution] $newSolution = [NSolution]::new()
@@ -48,7 +48,7 @@ class NProjectsSearcher
         foreach($solution in $solutions) {
             [List[string]] $projectsIdsList = [List[string]]::new()
             $solutionBaseData = $solution.GetBaseData()
-            $solutionFullPath = "$($solutionBaseData.Path)\$($solutionBaseData.Name)"
+            $solutionFullPath = "$($solutionBaseData.Path)"
             $slnProjectsPathes = (dotnet sln $solutionFullPath list) | Select-Object -Skip 2 | Where-Object {$_.EndsWith($projExt)}
             
             if($slnProjectsPathes -eq $null -or  $slnProjectsPathes.Count -eq 0)
@@ -58,7 +58,7 @@ class NProjectsSearcher
             }
             
             foreach ($relativeProjectPath in $slnProjectsPathes) {
-                $slnPath = $solutionBaseData.Path
+                $slnPath = Split-Path $solutionBaseData.Path
                 [string] $projectFullPath = "$($slnPath)\$($relativeProjectPath)"
                 
                 [NProject] $project = [NProject]::new()

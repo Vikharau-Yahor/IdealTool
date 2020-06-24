@@ -91,10 +91,9 @@ class ActionItemsStorage : AbstractActionItemsStorage
     {
         [ActionItem] $result = $null
 
-        $result = $this.ActionItems.Values | Where-Object { ($_.Alias -eq $alias -and $_.IsActive) } | Select-Object -First 1
+        $result = $this.ActionItems.Values | Where-Object { ($_.Alias -eq $alias -and $_.IsActive -and $_.AIType -eq $itemType) } | Select-Object -First 1
         return $result
     }
-
     
     [ActionItem] GetById([string] $id)
     {

@@ -3,9 +3,12 @@ enum CommandsEnum
 {
     Quit = 0
     Scan = 1
-    Run = 2
-    UnmanagedRun = 3
-    OpenVisualStudio = 4
-    OpenRider = 5
-    SetAlias = 6
+    RunScript = 2
+    UnmanagedRunScript = 3
+    OpenSlnVisualStudio = 4
+    OpenProjectVisualStudio = 5
+    OpenSlnRider = 6
+    OpenProjectRider = 7
+    SetAlias = 8
+    RunExe = 9
 }

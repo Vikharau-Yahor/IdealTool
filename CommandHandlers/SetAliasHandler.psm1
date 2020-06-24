@@ -21,7 +21,7 @@ class SetAliasHandler : CommandHandlerBase
     #overridden
     [void] Handle()
     { 
-        $breakCommandString = [Global]::CommandBreakString
+        $breakCommandString = [UserSettings]::CommandBreakString
         [ActionItemsStorage] $actionItemsStorage = $this.StorageProvider.GetActionItemsStorage()
         [ActionItem[]] $unaliasedActionItems = $actionItemsStorage.GetNonAliasedActionItems()
         [List[ActionItem]] $updatedActionItems = [List[ActionItem]]::new()
@@ -71,7 +71,7 @@ class SetAliasHandler : CommandHandlerBase
 
     hidden [bool] ValidateUserInput([string] $userString, [ActionItemType] $itemType)
     {
-        if([string]::IsNullOrEmpty($userString) -or $userString -eq [Global]::CommandBreakString)
+        if([string]::IsNullOrEmpty($userString) -or $userString -eq [UserSettings]::CommandBreakString)
         { return $true }
 
         [ActionItemsStorage] $actionItemsStorage = $this.StorageProvider.GetActionItemsStorage()

@@ -1,3 +1,14 @@
+class UserSettings
+{
+    #tools pathes
+    static [string] $DevEnvPath = $null #path to Visual studio "devenv.exe"
+    static [string] $PowershellPath = $null #path to "powerhshell.exe"
+    
+    #utils
+    static [string] $CommandBreakString = "#break"
+}
+
+#System settings
 class Global
 {
     static [string] $ErrorPreferenceOption = "stop"
@@ -19,7 +30,4 @@ class Global
     #scripts relative folders
     static [string] $ManagedScriptsPath = "\_Scripts\Managed"
     static [string] $UnManagedScriptsPath = "\_Scripts\UnManaged"
-
-    #utils
-    static [string] $CommandBreakString = "#break"
 }

@@ -106,6 +106,18 @@ class NetProjectsStorage : AbstractActionItemsStorage
         $this.ActionItemsStorage.Add($newActionItems)
     }
 
+    [NProject] GetProjectById([string] $id)
+    {
+        [NProject] $result = $null
+        if(-not ($this.Projects.ContainsKey($id)))
+        {
+            $this.Logger.LogError("NetProjectsStorage.GetById(string): Project with Id '$($id)' doesn't exists in the storage")
+            return $result   
+        }
+        $result = $this.Projects[$id]
+        return $result
+    }
+
     Save()
     {
         [DotNetItemsContainer] $nSolutionsContainer = [DotNetItemsContainer]::new()

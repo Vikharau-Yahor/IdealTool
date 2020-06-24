@@ -2,10 +2,13 @@
   <Commands>
     <Command Id="0" Alias="q" />
     <Command Id="1" Alias="scan" />
-    <Command Id="2" Alias="run" />
-    <Command Id="3" Alias="urun" />
-    <Command Id="4" Alias="openvs" />
-    <Command Id="5" Alias="openr" />
-    <Command Id="6" Alias="setalias" />
+    <Command Id="2" Alias="runscript" />
+    <Command Id="3" Alias="urunscript" />
+    <Command Id="4" Alias="openslnvs" />
+    <Command Id="5" Alias="openprojvs" />
+    <Command Id="6" Alias="openslnrider" />
+    <Command Id="7" Alias="openprojrider" />
+    <Command Id="8" Alias="setalias" />
+    <Command Id="9" Alias="runexe" />
   </Commands>
 </CommandsRoot>
