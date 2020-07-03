@@ -11,37 +11,50 @@ using module ..\Logger.psm1
 
 class RunExe : CommandHandlerBase
 {
-    [DotNetTool] $DotNetTool
-    
+    hidden [DotNetTool] $DotNetTool
+    hidden [NetProjectsStorage] $DotNetStorage
+
     RunExe ([StorageProvider]$storageProvider, [Logger] $logger, [string]$commandParams) : base($storageProvider, $logger, $commandParams)
     { 
         $this.DotNetTool = [DotNetTool]::new($logger)
+        $this.DotNetStorage = $this.StorageProvider.GetNetProjectsStorage()
     }
 
     #overridden
     [void] Handle()
     { 
-        $solutionAlias = $this.CommandParams
+        [string[]] $projectAliases = $this.ExtractItems($this.CommandParams)
 
-        if([string]::IsNullOrWhiteSpace($solutionAlias))
+        if($projectAliases.Count -eq 0)
         { 
-            $this.Logger.LogInfo("You must specify project alias for this command")
+            $this.Logger.LogInfo("You must specify at least one project alias for this command")
             return
         }
+
+        foreach($projectAlias in $projectAliases)
+        {
+            $this.RunMsOrExe($projectAlias)
+        }
+    }
+
+    [void] RunMsOrExe([string] $projectAlias)
+    {
         [ActionItemsStorage]$actionItemsStorage = $this.StorageProvider.GetActionItemsStorage()
-        $projectActionItem = $actionItemsStorage.GetByAlias($solutionAlias, [ActionItemType]::NProj)
+        $projectActionItem = $actionItemsStorage.GetByAlias($projectAlias, [ActionItemType]::NProj)
         
         if($projectActionItem -eq $null)
         {
-            $this.Logger.LogInfo("Solution with alias $solutionAlias has't been found")
+            $this.Logger.LogInfo("Project with alias $projectAlias has't been found")
             return
         }     
 
-        [NetProjectsStorage]$dotNetStorage = $this.StorageProvider.GetNetProjectsStorage()
-        [NProject ]$project = $dotNetStorage.GetProjectById($projectActionItem.Id)
+        [NProject ]$project = $this.DotNetStorage.GetProjectById($projectActionItem.Id)
         
         if($project -eq $null)
-        { return }
+        { 
+            $this.Logger.LogInfo("Project with id $($projectActionItem.Id) has't been found")
+            return 
+        }
         
         if($project.Type -ne [NProjectType]::ExeOrWinService)
         {
@@ -49,7 +62,6 @@ class RunExe : CommandHandlerBase
             return
         }
         # must run in separate powershell window  
-        $this.DotNetTool.RunProject($projectActionItem.Path, "Debug")
-
+        $this.DotNetTool.RunProject($projectActionItem.Path, "Release")    
     }
 }

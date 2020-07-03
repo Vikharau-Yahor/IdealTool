@@ -18,4 +18,13 @@ class CommandHandlerBase
     { 
         throw "Handle() must be implemented in inherited class"
     }
+
+    [string[]] ExtractItems([string] $paramsString)
+    {
+        if([string]::IsNullOrEmpty($paramsString))
+        { return @() }
+
+        $result = $paramsString.Split(@(',',';',' '), [System.StringSplitOptions]::RemoveEmptyEntries)
+        return $result
+    }
 }
