@@ -6,7 +6,7 @@ using module .\CommandHandlers\_CommandHandlerBase.psm1
 using module .\CommandHandlers\URunScriptHandler.psm1
 using module .\CommandHandlers\ScanHandler.psm1
 using module .\CommandHandlers\SetAliasHandler.psm1
-using module .\CommandHandlers\OpenSlnVS.psm1
+using module .\CommandHandlers\OpenVS.psm1
 using module .\CommandHandlers\RunExe.psm1
 
 class CommandHanldersFactory
@@ -29,7 +29,7 @@ class CommandHanldersFactory
             ([CommandsEnum]::UnmanagedRunScript) { $handler = [URunScriptHandler]::new($this.StorageProvider, $this.Logger, $commandParams) } 
             ([CommandsEnum]::Scan) { $handler = [ScanHandler]::new($this.StorageProvider, $this.Logger, $commandParams) } 
             ([CommandsEnum]::SetAlias) { $handler = [SetAliasHandler]::new($this.StorageProvider, $this.Logger) } 
-            ([CommandsEnum]::OpenSlnVisualStudio) { $handler = [OpenSlnVS]::new($this.StorageProvider, $this.Logger, $commandParams) } 
+            ([CommandsEnum]::OpenVisualStudio) { $handler = [OpenVS]::new($this.StorageProvider, $this.Logger, $commandParams) } 
             ([CommandsEnum]::RunExe) { $handler = [RunExe]::new($this.StorageProvider, $this.Logger, $commandParams) } 
             default { return $null }
         }

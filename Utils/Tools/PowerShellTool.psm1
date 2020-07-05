@@ -51,7 +51,7 @@ class PowerShellTool : BaseTool
         $bytes = [System.Text.Encoding]::Unicode.GetBytes($commandsString)
         $encodedCommand = [Convert]::ToBase64String($bytes)
         
-        Start-Process $powerShellPath -ArgumentList "-EncodedCommand $encodedCommand"
+        Start-Process $powerShellPath -ArgumentList "-EncodedCommand $encodedCommand" -Verb RunAs
         
     }
 
