@@ -9,4 +9,5 @@ enum CommandsEnum
     OpenRider = 5
     SetAlias = 6
     RunExe = 7
+    NetBuild = 8
 }

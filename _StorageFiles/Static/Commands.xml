@@ -13,5 +13,11 @@
     <Command Id="5" Alias="openrider" />
     <Command Id="6" Alias="setalias" />
     <Command Id="7" Alias="runexe" />
+    <Command Id="8" Alias="netbuild" >
+      <Modifiers>
+        <CommandModifier Id="0" Alias="proj" />
+        <CommandModifier Id="1" Alias="release" />
+      </Modifiers>
+    </Command>
   </Commands>
 </CommandsRoot>

@@ -8,6 +8,7 @@ using module .\CommandHandlers\ScanHandler.psm1
 using module .\CommandHandlers\SetAliasHandler.psm1
 using module .\CommandHandlers\OpenVS.psm1
 using module .\CommandHandlers\RunExe.psm1
+using module .\CommandHandlers\NetBuildHandler.psm1
 
 class CommandHanldersFactory
 {
@@ -31,6 +32,7 @@ class CommandHanldersFactory
             ([CommandsEnum]::SetAlias) { $handler = [SetAliasHandler]::new($this.StorageProvider, $this.Logger) } 
             ([CommandsEnum]::OpenVisualStudio) { $handler = [OpenVS]::new($this.StorageProvider, $this.Logger, $commandParams) } 
             ([CommandsEnum]::RunExe) { $handler = [RunExe]::new($this.StorageProvider, $this.Logger, $commandParams) } 
+            ([CommandsEnum]::NetBuild) { $handler = [NetBuildHandler]::new($this.StorageProvider, $this.Logger, $commandParams) } 
             default { return $null }
         }
 

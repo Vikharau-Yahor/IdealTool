@@ -23,7 +23,7 @@ class RunExe : CommandHandlerBase
     #overridden
     [void] Handle()
     { 
-        [string[]] $projectAliases = $this.ExtractItems($this.CommandParams)
+        [string[]] $projectAliases = $this.ExtractParams($this.CommandParams)
 
         if($projectAliases.Count -eq 0)
         { 
@@ -62,6 +62,6 @@ class RunExe : CommandHandlerBase
             return
         }
         # must run in separate powershell window  
-        $this.DotNetTool.RunProject($projectActionItem.Path, "Release")    
+        $this.DotNetTool.RunProject($projectActionItem.Path, $true)    
     }
 }

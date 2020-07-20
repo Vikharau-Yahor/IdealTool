@@ -58,7 +58,7 @@ class Main
        
         if($handler -eq $null)
         {
-            $this.Logger("There is no handler for command: $($command.Id)")
+            $this.Logger.LogInfo("There is no handler for command: $($command.Id)")
             return
         }
 
