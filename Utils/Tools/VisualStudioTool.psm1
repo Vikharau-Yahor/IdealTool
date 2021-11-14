@@ -12,7 +12,7 @@ class VisualStudioTool : BaseTool
     {
          if([VisualStudioTool]::IsAvailable -eq $false)
          {
-            if(-not [string]::IsNullOrEmpty([UserSettings]::DevEnvPath) -and (Test-Path [UserSettings]::DevEnvPath)) {
+            if(-not [string]::IsNullOrEmpty([UserSettings]::DevEnvPath) -and (Test-Path ([UserSettings]::DevEnvPath))) {
                 [VisualStudioTool]::DevEnvExe = [UserSettings]::DevEnvPath
                 [VisualStudioTool]::IsAvailable = $true
             }
